@@ -10,9 +10,9 @@ gcc vm.c -o vm
 ### Usage
 ```
 ./vm [file] [options]
-```
 
-##### Options
-- -d - debug mode
-- -vr - view registers values
-- -md - create memory dump
+Options:
+-d - debug mode
+-vr - view registers values
+-md - create memory dump
+```

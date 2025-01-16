@@ -40,11 +40,18 @@ int main(int argc, char* argv[]) {
 	Registers registers = {0};
 
 	if (argc < 2) {
-		printf("Usage: %s [file]\n", argv[0]);
+		printf("Usage: %s <file> [options]\n\n", argv[0]);
 		return 1;
 	}
 
-	if (strcmp(argv[1], "-v") == 0 || strcmp(argv[1], "--version") == 0) {
+	if (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0) {
+		printf("Usage: %s <file> [options]\n\n", argv[0]);
+		printf("Options:\n");
+		printf("-d - debug mode\n");
+		printf("-vr - view registers values\n");
+		printf("-md - create memory dump\n");
+		return 0;
+	} else if (strcmp(argv[1], "-v") == 0 || strcmp(argv[1], "--version") == 0) {
 		printf("VM v%s\n", VERSION);
 		return 0;
 	}
