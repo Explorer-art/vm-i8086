@@ -13,6 +13,6 @@ gcc vm.c -o vm
 ```
 
 ##### Options
--d - debug mode
--vr - view registers values
--md - create memory dump
+- -d - debug mode
+- -vr - view registers values
+- -md - create memory dump
