@@ -9,7 +9,7 @@ gcc vm.c -o vm
 
 ### Usage
 ```
-./vm [file] [options]
+./vm <file> [options]
 
 Options:
 -d - debug mode
