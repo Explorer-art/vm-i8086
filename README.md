@@ -1,10 +1,10 @@
 # VM i8086
 
-VM i8086 is virtual machine based on as Intel 8086 processor. It is written on C programming language.
+VM i8086 is virtual machine based on an Intel 8086 processor. It is written on C programming language.
 
 ###  Build
 ```
-gcc vm.c -o vm
+make
 ```
 
 ### Usage
