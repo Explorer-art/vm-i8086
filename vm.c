@@ -6,7 +6,7 @@
 #include <string.h>
 #include "i8086.h"
 
-#define VERSION			"0.1"
+#define VERSION			"0.1.1"
 #define BUFFER_SIZE		1024
 #define MEMORY_SIZE 	1048576
 
@@ -64,7 +64,7 @@ int main(int argc, char* argv[]) {
 		for (int i = 2; i < argc; i++) {
 			if (strcmp(argv[i], "-d") == 0 || strcmp(argv[i], "--debug") == 0) {
 				DEBUG = true;
-			} else if (strcmp(argv[i], "-rv") == 0 || strcmp(argv[i], "--registers-view") == 0) {
+			} else if (strcmp(argv[i], "-vr") == 0 || strcmp(argv[i], "--view-registers") == 0) {
 				REGISTERS_VIEW = true;
 			} else if (strcmp(argv[i], "-md") == 0 || strcmp(argv[i], "--memory-dump") == 0) {
 				MEMORY_DUMP = true;
@@ -77,7 +77,7 @@ int main(int argc, char* argv[]) {
 	FILE *fp = fopen(argv[1], "rb");
 
 	if (fp == NULL) {
-		printf("Error opening file!\n");
+		printf("Error opening file\n");
 		exit(1);
 	}
 
@@ -101,7 +101,248 @@ int main(int argc, char* argv[]) {
 		}
 
 		switch (memory[registers.IP]) {
-			case MOV_REG_REG:
+			case MOV_8REG_REG:
+				registers.IP++;
+
+				if (DEBUG) {
+					printf("%02X ", memory[registers.IP]);
+				}
+
+				switch (memory[registers.IP]) {
+					case MOV_AL_AL:
+						if (DEBUG) {
+							printf("mov al, al");
+						}
+
+						registers.AX = registers.AX;
+						break;
+					case MOV_AL_BL:
+						if (DEBUG) {
+							printf("mov al, bl");
+						}
+
+						registers.AX = registers.BX;
+						break;
+					case MOV_AL_CL:
+						if (DEBUG) {
+							printf("mov al, cl");
+						}
+
+						registers.AX = registers.CX;
+						break;
+					case MOV_AL_DL:
+						if (DEBUG) {
+							printf("mov al, dl");
+						}
+
+						registers.AX = registers.DX;
+						break;
+					case MOV_BL_AL:
+						if (DEBUG) {
+							printf("mov bl, al");
+						}
+
+						registers.BX = registers.AX;
+						break;
+					case MOV_BL_BL:
+						if (DEBUG) {
+							printf("mov bl, bl");
+						}
+
+						registers.BX = registers.BX;
+						break;
+					case MOV_BL_CL:
+						if (DEBUG) {
+							printf("mov bl, cl");
+						}
+
+						registers.BX = registers.CX;
+						break;
+					case MOV_BL_DL:
+						if (DEBUG) {
+							printf("mov bl, dl");
+						}
+
+						registers.BX = registers.DX;
+						break;
+					case MOV_CL_AL:
+						if (DEBUG) {
+							printf("mov cl, al");
+						}
+
+						registers.CX = registers.AX;
+						break;
+					case MOV_CL_BL:
+						if (DEBUG) {
+							printf("mov cl, bl");
+						}
+
+						registers.CX = registers.BX;
+						break;
+					case MOV_CL_CL:
+						if (DEBUG) {
+							printf("mov cl, cl");
+						}
+
+						registers.CX = registers.CX;
+						break;
+					case MOV_CL_DL:
+						if (DEBUG) {
+							printf("mov cl, dl");
+						}
+
+						registers.CX = registers.DX;
+						break;
+					case MOV_DL_AL:
+						if (DEBUG) {
+							printf("mov dl, al");
+						}
+
+						registers.DX = registers.AX;
+						break;
+					case MOV_DL_BL:
+						if (DEBUG) {
+							printf("mov dl, bl");
+						}
+
+						registers.DX = registers.BX;
+						break;
+					case MOV_DL_CL:
+						if (DEBUG) {
+							printf("mov dl, cl");
+						}
+
+						registers.DX = registers.CX;
+						
+						break;
+					case MOV_DL_DL:
+						if (DEBUG) {
+							printf("mov dl, dl");
+						}
+
+						registers.DX = registers.DX;
+						break;
+					case MOV_AH_AH:
+						if (DEBUG) {
+							printf("mov ah, ah");
+						}
+
+						registers.AX = registers.AX;
+						break;
+					case MOV_AH_BH:
+						if (DEBUG) {
+							printf("mov ah, bh");
+						}
+
+						registers.AX = registers.BX;
+						break;
+					case MOV_AH_CH:
+						if (DEBUG) {
+							printf("mov ah, ch");
+						}
+
+						registers.AX = registers.CX;
+						break;
+					case MOV_AH_DH:
+						if (DEBUG) {
+							printf("mov ah, dh");
+						}
+
+						registers.AX = registers.DX;
+						break;
+					case MOV_BH_AH:
+						if (DEBUG) {
+							printf("mov bh, ah");
+						}
+
+						registers.BX = registers.AX;
+						break;
+					case MOV_BH_BH:
+						if (DEBUG) {
+							printf("mov bh, bh");
+						}
+
+						registers.BX = registers.BX;
+						break;
+					case MOV_BH_CH:
+						if (DEBUG) {
+							printf("mov bh, ch");
+						}
+
+						registers.BX = registers.CX;
+						break;
+					case MOV_BH_DH:
+						if (DEBUG) {
+							printf("mov bh, dh");
+						}
+
+						registers.BX = registers.DX;
+						break;
+					case MOV_CH_AH:
+						if (DEBUG) {
+							printf("mov ch, ah");
+						}
+
+						registers.CX = registers.AX;
+						break;
+					case MOV_CH_BH:
+						if (DEBUG) {
+							printf("mov ch, bh");
+						}
+
+						registers.CX = registers.BX;
+						break;
+					case MOV_CH_CH:
+						if (DEBUG) {
+							printf("mov ch, ch");
+						}
+
+						registers.CX = registers.CX;
+						break;
+					case MOV_CH_DH:
+						if (DEBUG) {
+							printf("mov ch, dh");
+						}
+
+						registers.CX = registers.DX;
+						break;
+					case MOV_DH_AH:
+						if (DEBUG) {
+							printf("mov dh, ah");
+						}
+
+						registers.DX = registers.AX;
+						break;
+					case MOV_DH_BH:
+						if (DEBUG) {
+							printf("mov dh, bh");
+						}
+
+						registers.DX = registers.BX;
+						break;
+					case MOV_DH_CH:
+						if (DEBUG) {
+							printf("mov dh, ch");
+						}
+
+						registers.DX = registers.CX;
+						
+						break;
+					case MOV_DH_DH:
+						if (DEBUG) {
+							printf("mov dh, dh");
+						}
+
+						registers.DX = registers.DX;
+						break;
+					default:
+						if (DEBUG) {
+							printf("Unknwon instruction!");
+						}
+						break;
+				}
+				break;
+			case MOV_16REG_REG:
 				registers.IP++;
 
 				if (DEBUG) {
@@ -273,116 +514,239 @@ int main(int argc, char* argv[]) {
 					printf("mov dx, %X", registers.DX);
 				}
 				break;
-			case ADD_REG_REG:
+			case ADD_8REG_REG:
 				registers.IP++;
 
 				switch (memory[registers.IP]) {
-					case ADD_AX_AX:
+					case OP_AX_AX:
+						registers.AX = (registers.AX & 0xFF00) | ((uint8_t) registers.AX + (uint8_t) registers.AX);
+
+						if (DEBUG) {
+							printf("add al, al");
+						}
+						break;
+					case OP_AX_BX:
+						registers.AX = (registers.AX & 0xFF00) | ((uint8_t) registers.AX + (uint8_t) registers.BX);
+						
+						if (DEBUG) {
+							printf("add al, bl");
+						}
+						break;
+					case OP_AX_CX:
+						registers.AX = (registers.AX & 0xFF00) | ((uint8_t) registers.AX + (uint8_t) registers.CX);
+						
+						if (DEBUG) {
+							printf("add al, cl");
+						}
+						break;
+					case OP_AX_DX:
+						registers.AX = (registers.AX & 0xFF00) | ((uint8_t) registers.AX + (uint8_t) registers.DX);
+						
+						if (DEBUG) {
+							printf("add al, dl");
+						}
+						break;
+					case OP_BX_AX:
+						registers.BX = (registers.BX & 0xFF00) | ((uint8_t) registers.BX + (uint8_t) registers.AX);
+
+						if (DEBUG) {
+							printf("add bl, al");
+						}
+						break;
+					case OP_BX_BX:
+						registers.BX = (registers.BX & 0xFF00) | ((uint8_t) registers.BX + (uint8_t) registers.BX);
+						
+						if (DEBUG) {
+							printf("add bl, bl");
+						}
+						break;
+					case OP_BX_CX:
+						registers.BX = (registers.BX & 0xFF00) | ((uint8_t) registers.BX + (uint8_t) registers.CX);
+						
+						if (DEBUG) {
+							printf("add bl, cl");
+						}
+						break;
+					case OP_BX_DX:
+						registers.BX = (registers.BX & 0xFF00) | ((uint8_t) registers.BX + (uint8_t) registers.DX);
+						
+						if (DEBUG) {
+							printf("add bl, dl");
+						}
+						break;
+					case OP_CX_AX:
+						registers.CX = (registers.CX & 0xFF00) | ((uint8_t) registers.CX + (uint8_t) registers.AX);
+
+						if (DEBUG) {
+							printf("add cl, al");
+						}
+						break;
+					case OP_CX_BX:
+						registers.CX = (registers.CX & 0xFF00) | ((uint8_t) registers.CX + (uint8_t) registers.BX);
+						
+						if (DEBUG) {
+							printf("add cl, bl");
+						}
+						break;
+					case OP_CX_CX:
+						registers.CX = (registers.CX & 0xFF00) | ((uint8_t) registers.CX + (uint8_t) registers.CX);
+						
+						if (DEBUG) {
+							printf("add cl, cl");
+						}
+						break;
+					case OP_CX_DX:
+						registers.CX = (registers.CX & 0xFF00) | ((uint8_t) registers.CX + (uint8_t) registers.DX);
+						
+						if (DEBUG) {
+							printf("add cl, dl");
+						}
+						break;
+					case OP_DX_AX:
+						registers.DX = (registers.DX & 0xFF00) | ((uint8_t) registers.DX + (uint8_t) registers.AX);
+
+						if (DEBUG) {
+							printf("add dl, al");
+						}
+						break;
+					case OP_DX_BX:
+						registers.DX = (registers.DX & 0xFF00) | ((uint8_t) registers.DX + (uint8_t) registers.BX);
+						
+						if (DEBUG) {
+							printf("add dl, bl");
+						}
+						break;
+					case OP_DX_CX:
+						registers.DX = (registers.DX & 0xFF00) | ((uint8_t) registers.DX + (uint8_t) registers.CX);
+						
+						if (DEBUG) {
+							printf("add dl, cl");
+						}
+						break;
+					case OP_DX_DX:
+						registers.DX = (registers.DX & 0xFF00) | ((uint8_t) registers.DX + (uint8_t) registers.DX);
+						
+						if (DEBUG) {
+							printf("add dl, dl");
+						}
+						break;
+					default:
+						if (DEBUG) {
+							printf("Unknwon instruction!");
+						}
+						break;
+				}
+				break;
+			case ADD_16REG_REG:
+				registers.IP++;
+
+				switch (memory[registers.IP]) {
+					case OP_AX_AX:
 						registers.AX += registers.AX;
 
 						if (DEBUG) {
 							printf("add ax, ax");
 						}
 						break;
-					case ADD_AX_BX:
+					case OP_AX_BX:
 						registers.AX += registers.BX;
 						
 						if (DEBUG) {
 							printf("add ax, bx");
 						}
 						break;
-					case ADD_AX_CX:
+					case OP_AX_CX:
 						registers.AX += registers.CX;
 						
 						if (DEBUG) {
 							printf("add ax, cx");
 						}
 						break;
-					case ADD_AX_DX:
+					case OP_AX_DX:
 						registers.AX += registers.DX;
 						
 						if (DEBUG) {
 							printf("add ax, dx");
 						}
 						break;
-					case ADD_BX_AX:
+					case OP_BX_AX:
 						registers.BX += registers.AX;
 
 						if (DEBUG) {
 							printf("add bx, ax");
 						}
 						break;
-					case ADD_BX_BX:
+					case OP_BX_BX:
 						registers.BX += registers.BX;
 						
 						if (DEBUG) {
 							printf("add bx, bx");
 						}
 						break;
-					case ADD_BX_CX:
+					case OP_BX_CX:
 						registers.BX += registers.CX;
 						
 						if (DEBUG) {
 							printf("add bx cx");
 						}
 						break;
-					case ADD_BX_DX:
+					case OP_BX_DX:
 						registers.BX += registers.DX;
 						
 						if (DEBUG) {
 							printf("add bx, dx");
 						}
 						break;
-					case ADD_CX_AX:
+					case OP_CX_AX:
 						registers.CX += registers.AX;
 
 						if (DEBUG) {
 							printf("add cx, ax");
 						}
 						break;
-					case ADD_CX_BX:
+					case OP_CX_BX:
 						registers.CX += registers.BX;
 						
 						if (DEBUG) {
 							printf("add cx, bx");
 						}
 						break;
-					case ADD_CX_CX:
+					case OP_CX_CX:
 						registers.CX += registers.CX;
 						
 						if (DEBUG) {
 							printf("add cx, cx");
 						}
 						break;
-					case ADD_CX_DX:
+					case OP_CX_DX:
 						registers.CX += registers.DX;
 						
 						if (DEBUG) {
 							printf("add cx, dx");
 						}
 						break;
-					case ADD_DX_AX:
+					case OP_DX_AX:
 						registers.DX += registers.AX;
 
 						if (DEBUG) {
 							printf("add dx, ax");
 						}
 						break;
-					case ADD_DX_BX:
+					case OP_DX_BX:
 						registers.DX += registers.BX;
 						
 						if (DEBUG) {
 							printf("add dx, bx");
 						}
 						break;
-					case ADD_DX_CX:
+					case OP_DX_CX:
 						registers.DX += registers.CX;
 						
 						if (DEBUG) {
 							printf("add dx, cx");
 						}
 						break;
-					case ADD_DX_DX:
+					case OP_DX_DX:
 						registers.DX += registers.DX;
 						
 						if (DEBUG) {
@@ -396,116 +760,239 @@ int main(int argc, char* argv[]) {
 						break;
 				}
 				break;
-			case SUB_REG_REG:
+			case SUB_8REG_REG:
 				registers.IP++;
 
 				switch (memory[registers.IP]) {
-					case ADD_AX_AX:
+					case OP_AX_AX:
+						registers.AX = (registers.AX & 0xFF00) | ((uint8_t) registers.AX - (uint8_t) registers.AX);
+
+						if (DEBUG) {
+							printf("sub al, al");
+						}
+						break;
+					case OP_AX_BX:
+						registers.AX = (registers.AX & 0xFF00) | ((uint8_t) registers.AX - (uint8_t) registers.BX);
+						
+						if (DEBUG) {
+							printf("sub al, bl");
+						}
+						break;
+					case OP_AX_CX:
+						registers.AX = (registers.AX & 0xFF00) | ((uint8_t) registers.AX - (uint8_t) registers.CX);
+						
+						if (DEBUG) {
+							printf("sub al, cl");
+						}
+						break;
+					case OP_AX_DX:
+						registers.AX = (registers.AX & 0xFF00) | ((uint8_t) registers.AX - (uint8_t) registers.DX);
+						
+						if (DEBUG) {
+							printf("sub al, dl");
+						}
+						break;
+					case OP_BX_AX:
+						registers.BX = (registers.BX & 0xFF00) | ((uint8_t) registers.BX - (uint8_t) registers.AX);
+
+						if (DEBUG) {
+							printf("sub bl, al");
+						}
+						break;
+					case OP_BX_BX:
+						registers.BX = (registers.BX & 0xFF00) | ((uint8_t) registers.BX - (uint8_t) registers.BX);
+						
+						if (DEBUG) {
+							printf("sub bl, bl");
+						}
+						break;
+					case OP_BX_CX:
+						registers.BX = (registers.BX & 0xFF00) | ((uint8_t) registers.BX - (uint8_t) registers.CX);
+						
+						if (DEBUG) {
+							printf("sub bl, cl");
+						}
+						break;
+					case OP_BX_DX:
+						registers.BX = (registers.BX & 0xFF00) | ((uint8_t) registers.BX - (uint8_t) registers.DX);
+						
+						if (DEBUG) {
+							printf("sub bl, dl");
+						}
+						break;
+					case OP_CX_AX:
+						registers.CX = (registers.CX & 0xFF00) | ((uint8_t) registers.CX - (uint8_t) registers.AX);
+
+						if (DEBUG) {
+							printf("sub cl, al");
+						}
+						break;
+					case OP_CX_BX:
+						registers.CX = (registers.CX & 0xFF00) | ((uint8_t) registers.CX - (uint8_t) registers.BX);
+						
+						if (DEBUG) {
+							printf("sub cl, bl");
+						}
+						break;
+					case OP_CX_CX:
+						registers.CX = (registers.CX & 0xFF00) | ((uint8_t) registers.CX - (uint8_t) registers.CX);
+						
+						if (DEBUG) {
+							printf("sub cl, cl");
+						}
+						break;
+					case OP_CX_DX:
+						registers.CX = (registers.CX & 0xFF00) | ((uint8_t) registers.CX - (uint8_t) registers.DX);
+						
+						if (DEBUG) {
+							printf("sub cl, dl");
+						}
+						break;
+					case OP_DX_AX:
+						registers.DX = (registers.DX & 0xFF00) | ((uint8_t) registers.DX - (uint8_t) registers.AX);
+
+						if (DEBUG) {
+							printf("sub dl, al");
+						}
+						break;
+					case OP_DX_BX:
+						registers.DX = (registers.DX & 0xFF00) | ((uint8_t) registers.DX - (uint8_t) registers.BX);
+						
+						if (DEBUG) {
+							printf("sub dl, bl");
+						}
+						break;
+					case OP_DX_CX:
+						registers.DX = (registers.DX & 0xFF00) | ((uint8_t) registers.DX - (uint8_t) registers.CX);
+						
+						if (DEBUG) {
+							printf("sub dl, cl");
+						}
+						break;
+					case OP_DX_DX:
+						registers.DX = (registers.DX & 0xFF00) | ((uint8_t) registers.DX - (uint8_t) registers.DX);
+						
+						if (DEBUG) {
+							printf("sub dl, dl");
+						}
+						break;
+					default:
+						if (DEBUG) {
+							printf("Unknwon instruction!");
+						}
+						break;
+				}
+				break;
+			case SUB_16REG_REG:
+				registers.IP++;
+
+				switch (memory[registers.IP]) {
+					case OP_AX_AX:
 						registers.AX -= registers.AX;
 
 						if (DEBUG) {
 							printf("sub ax, ax");
 						}
 						break;
-					case ADD_AX_BX:
+					case OP_AX_BX:
 						registers.AX -= registers.BX;
 						
 						if (DEBUG) {
 							printf("sub ax, bx");
 						}
 						break;
-					case ADD_AX_CX:
+					case OP_AX_CX:
 						registers.AX -= registers.CX;
 						
 						if (DEBUG) {
 							printf("sub ax, cx");
 						}
 						break;
-					case ADD_AX_DX:
+					case OP_AX_DX:
 						registers.AX -= registers.DX;
 						
 						if (DEBUG) {
 							printf("sub ax, dx");
 						}
 						break;
-					case ADD_BX_AX:
+					case OP_BX_AX:
 						registers.BX -= registers.AX;
 
 						if (DEBUG) {
 							printf("sub bx, ax");
 						}
 						break;
-					case ADD_BX_BX:
+					case OP_BX_BX:
 						registers.BX -= registers.BX;
 						
 						if (DEBUG) {
 							printf("sub bx, bx");
 						}
 						break;
-					case ADD_BX_CX:
+					case OP_BX_CX:
 						registers.BX -= registers.CX;
 						
 						if (DEBUG) {
 							printf("sub abx cx");
 						}
 						break;
-					case ADD_BX_DX:
+					case OP_BX_DX:
 						registers.BX -= registers.DX;
 						
 						if (DEBUG) {
 							printf("sub bx, dx");
 						}
 						break;
-					case ADD_CX_AX:
+					case OP_CX_AX:
 						registers.CX -= registers.AX;
 
 						if (DEBUG) {
 							printf("sub cx, ax");
 						}
 						break;
-					case ADD_CX_BX:
+					case OP_CX_BX:
 						registers.CX -= registers.BX;
 						
 						if (DEBUG) {
 							printf("sub cx, bx");
 						}
 						break;
-					case ADD_CX_CX:
+					case OP_CX_CX:
 						registers.CX -= registers.CX;
 						
 						if (DEBUG) {
 							printf("sub cx, cx");
 						}
 						break;
-					case ADD_CX_DX:
+					case OP_CX_DX:
 						registers.CX -= registers.DX;
 						
 						if (DEBUG) {
 							printf("sub cx, dx");
 						}
 						break;
-					case ADD_DX_AX:
+					case OP_DX_AX:
 						registers.DX -= registers.AX;
 
 						if (DEBUG) {
 							printf("sub dx, ax");
 						}
 						break;
-					case ADD_DX_BX:
+					case OP_DX_BX:
 						registers.DX -= registers.BX;
 						
 						if (DEBUG) {
 							printf("sub dx, bx");
 						}
 						break;
-					case ADD_DX_CX:
+					case OP_DX_CX:
 						registers.DX -= registers.CX;
 						
 						if (DEBUG) {
 							printf("sub dx, cx");
 						}
 						break;
-					case ADD_DX_DX:
+					case OP_DX_DX:
 						registers.DX -= registers.DX;
 						
 						if (DEBUG) {
