@@ -52,7 +52,7 @@ int main(int argc, char* argv[]) {
 		printf("-md - create memory dump\n");
 		return 0;
 	} else if (strcmp(argv[1], "-v") == 0 || strcmp(argv[1], "--version") == 0) {
-		printf("VM v%s\n", VERSION);
+		printf("VM version: %s\n", VERSION);
 		return 0;
 	}
 
