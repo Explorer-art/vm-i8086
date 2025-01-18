@@ -1,7 +1,7 @@
 all: clean vm
 
 vm:
-	gcc vm.c -o vm
+	gcc src/vm.c -o vm -I src/include
 
 test: clean_test
 	nasm -f bin tests/test.asm -o tests/test

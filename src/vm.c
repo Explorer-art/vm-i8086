@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <memory.h>
 #include <string.h>
-#include "i8086.h"
+#include <i8086.h>
 
 #define VERSION			"0.1.1"
 #define BUFFER_SIZE		1024
