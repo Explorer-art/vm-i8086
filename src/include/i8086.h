@@ -2,11 +2,19 @@
 
 #include <stdint.h>
 
+typedef union {
+	uint16_t base;
+	struct {
+		uint8_t low;
+		uint8_t high;
+	};
+} Register;
+
 typedef struct {
-	uint16_t AX;
-	uint16_t BX;
-	uint16_t CX;
-	uint16_t DX;
+	Register AX;
+	Register BX;
+	Register CX;
+	Register DX;
 	uint16_t SP;
 	uint16_t BP;
 	uint16_t SI;
@@ -83,6 +91,20 @@ typedef struct {
 #define MOV_DX_DX 0xD2
 #define ADD_8REG_REG 0x00
 #define ADD_16REG_REG 0x01
+#define ADD_8REG_VALUE 0x80
+#define ADD_16REG_VALUE 0x83
+#define ADD_AL_VALUE 0x04
+#define ADD_CL 0xC1
+#define ADD_DL 0xC2
+#define ADD_BL 0xC3
+#define ADD_AH 0xC4
+#define ADD_CH 0xC5
+#define ADD_DH 0xC6
+#define ADD_BH 0xC7
+#define ADD_AX 0xC0
+#define ADD_CX 0xC1
+#define ADD_DX 0xC2
+#define ADD_BX 0xC3
 #define SUB_8REG_REG 0x28
 #define SUB_16REG_REG 0x29
 #define OP_AX_AX 0xC0

@@ -1,4 +1,4 @@
 [bits 16]
 
-sub al, bl
+add al, 15
 hlt
