@@ -6,7 +6,7 @@
 #include <string.h>
 #include <i8086.h>
 
-#define VERSION			"0.1.1"
+#define VERSION			"0.1.2"
 #define BUFFER_SIZE		1024
 #define MEMORY_SIZE 	1048576
 
@@ -630,6 +630,7 @@ int main(int argc, char* argv[]) {
 							printf("add dl, dl");
 						}
 						break;
+					// Добавить регистры AH, BH, CH, DH
 					default:
 						if (DEBUG) {
 							printf("Unknwon instruction!");
@@ -876,6 +877,7 @@ int main(int argc, char* argv[]) {
 							printf("sub dl, dl");
 						}
 						break;
+					// Добавить регистры AH, BH, CH, DH
 					default:
 						if (DEBUG) {
 							printf("Unknwon instruction!");
