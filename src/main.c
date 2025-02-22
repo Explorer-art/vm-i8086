@@ -6,7 +6,7 @@
 #include <string.h>
 #include <i8086.h>
 
-#define VERSION			"0.1.2"
+#define VERSION			"0.1.3"
 #define BUFFER_SIZE		1024
 #define MEMORY_SIZE 	1048576
 
