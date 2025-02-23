@@ -10,6 +10,24 @@
 #define BUFFER_SIZE		1024
 #define MEMORY_SIZE 	1048576
 
+/*
+
+VM i8086
+Virtual Machine based on Intel 8086 processor
+
+Author: Truzme_
+License: MIT
+
+
+
+CHANGELOG:
+
+v0.1.3
+- Added AND opcode
+- Code optimization
+
+*/
+
 void load(uint8_t *memory, FILE *fp, size_t file_length) {
 	uint8_t buffer[BUFFER_SIZE];
 	uint8_t *memory_ptr = memory;
@@ -38,6 +56,24 @@ void memory_dump(char *filename, uint8_t *memory) {
 
 int main(int argc, char* argv[]) {
 	Registers registers = {0};
+
+	uint8_t *pregs8[8] = {
+		&registers.AX.low, &registers.CX.low, &registers.DX.low, &registers.BX.low,
+		&registers.AX.high, &registers.CX.high, &registers.DX.high, &registers.BX.high
+	};
+
+	char *reg8_names[8] = {
+		"al", "cl", "dl", "bl",
+		"ah", "ch", "dh", "bh"
+	};
+
+	uint16_t *pregs16[4] = {
+		&registers.AX.base, &registers.CX.base, &registers.DX.base, &registers.BX.base
+	};
+
+	char *reg16_names[4] = {
+		"ax", "cx", "dx", "bx"
+	};
 
 	if (argc < 2) {
 		printf("Usage: %s <file> [options]\n\n", argv[0]);
@@ -101,324 +137,38 @@ int main(int argc, char* argv[]) {
 		}
 
 		switch (memory[registers.IP]) {
-			case MOV_8REG_REG:
-				registers.IP++;
+			case MOV_8REG_REG: {
+				if (DEBUG) {
+					printf("%02X ", memory[registers.IP++]);
+				}
+
+				uint8_t modrm = memory[registers.IP];
+				uint8_t reg1 = modrm & 0b111;
+				uint8_t reg2 = (modrm >> 3) & 0b111;
 
 				if (DEBUG) {
-					printf("%02X ", memory[registers.IP]);
+					printf("mov %s, %s", reg8_names[reg1], reg8_names[reg2]);
 				}
 
-				switch (memory[registers.IP]) {
-					case AL_AL:
-						if (DEBUG) {
-							printf("mov al, al");
-						}
-						registers.AX.low = registers.AX.low;
-						break;
-					case AL_BL:
-						if (DEBUG) {
-							printf("mov al, bl");
-						}
-						registers.AX.low = registers.BX.low;
-						break;
-					case AL_CL:
-						if (DEBUG) {
-							printf("mov al, cl");
-						}
-						registers.AX.low = registers.CX.low;
-						break;
-					case AL_DL:
-						if (DEBUG) {
-							printf("mov al, dl");
-						}
-						registers.AX.low = registers.DX.low;
-						break;
-					case BL_AL:
-						if (DEBUG) {
-							printf("mov bl, al");
-						}
-						registers.BX.low = registers.AX.low;
-						break;
-					case BL_BL:
-						if (DEBUG) {
-							printf("mov bl, bl");
-						}
-						registers.BX.low = registers.BX.low;
-						break;
-					case BL_CL:
-						if (DEBUG) {
-							printf("mov bl, cl");
-						}
-						registers.BX.low = registers.CX.low;
-						break;
-					case BL_DL:
-						if (DEBUG) {
-							printf("mov bl, dl");
-						}
-						registers.BX.low = registers.DX.low;
-						break;
-					case CL_AL:
-						if (DEBUG) {
-							printf("mov cl, al");
-						}
-						registers.CX.low = registers.AX.low;
-						break;
-					case CL_BL:
-						if (DEBUG) {
-							printf("mov cl, bl");
-						}
-						registers.CX.low = registers.BX.low;
-						break;
-					case CL_CL:
-						if (DEBUG) {
-							printf("mov cl, cl");
-						}
-						registers.CX.low = registers.CX.low;
-						break;
-					case CL_DL:
-						if (DEBUG) {
-							printf("mov cl, dl");
-						}
-						registers.CX.low = registers.DX.low;
-						break;
-					case DL_AL:
-						if (DEBUG) {
-							printf("mov dl, al");
-						}
-						registers.DX.low = registers.AX.low;
-						break;
-					case DL_BL:
-						if (DEBUG) {
-							printf("mov dl, bl");
-						}
-						registers.DX.low = registers.BX.low;
-						break;
-					case DL_CL:
-						if (DEBUG) {
-							printf("mov dl, cl");
-						}
-						registers.DX.low = registers.CX.low;
-						break;
-					case DL_DL:
-						if (DEBUG) {
-							printf("mov dl, dl");
-						}
-						registers.DX.low = registers.DX.low;
-						break;
-					case AH_AH:
-						if (DEBUG) {
-							printf("mov ah, ah");
-						}
-						registers.AX.high = registers.AX.high;
-						break;
-					case AH_BH:
-						if (DEBUG) {
-							printf("mov ah, bh");
-						}
-						registers.AX.high = registers.BX.high;
-						break;
-					case AH_CH:
-						if (DEBUG) {
-							printf("mov ah, ch");
-						}
-						registers.AX.high = registers.CX.high;
-						break;
-					case AH_DH:
-						if (DEBUG) {
-							printf("mov ah, dh");
-						}
-						registers.AX.high = registers.DX.high;
-						break;
-					case BH_AH:
-						if (DEBUG) {
-							printf("mov bh, ah");
-						}
-						registers.BX.high = registers.AX.high;
-						break;
-					case BH_BH:
-						if (DEBUG) {
-							printf("mov bh, bh");
-						}
-						registers.BX.high = registers.BX.high;
-						break;
-					case BH_CH:
-						if (DEBUG) {
-							printf("mov bh, ch");
-						}
-						registers.BX.high = registers.CX.high;
-						break;
-					case BH_DH:
-						if (DEBUG) {
-							printf("mov bh, dh");
-						}
-						registers.BX.high = registers.DX.high;
-						break;
-					case CH_AH:
-						if (DEBUG) {
-							printf("mov ch, ah");
-						}
-						registers.CX.high = registers.AX.high;
-						break;
-					case CH_BH:
-						if (DEBUG) {
-							printf("mov ch, bh");
-						}
-						registers.CX.high = registers.BX.high;
-						break;
-					case CH_CH:
-						if (DEBUG) {
-							printf("mov ch, ch");
-						}
-						registers.CX.high = registers.CX.high;
-						break;
-					case CH_DH:
-						if (DEBUG) {
-							printf("mov ch, dh");
-						}
-						registers.CX.high = registers.DX.high;
-						break;
-					case DH_AH:
-						if (DEBUG) {
-							printf("mov dh, ah");
-						}
-						registers.DX.high = registers.AX.high;
-						break;
-					case DH_BH:
-						if (DEBUG) {
-							printf("mov dh, bh");
-						}
-						registers.DX.high = registers.BX.high;
-						break;
-					case DH_CH:
-						if (DEBUG) {
-							printf("mov dh, ch");
-						}
-						registers.DX.high = registers.CX.high;
-						break;
-					case DH_DH:
-						if (DEBUG) {
-							printf("mov dh, dh");
-						}
-						registers.DX.high = registers.DX.high;
-						break;
-					default:
-						if (DEBUG) {
-							printf("Unknwon instruction!");
-						}
-						break;
-				}
+				*pregs8[reg1] = *pregs8[reg2];
 				break;
-			case MOV_16REG_REG:
-				registers.IP++;
+			}
+			case MOV_16REG_REG: {
+				if (DEBUG) {
+					printf("%02X ", memory[registers.IP++]);
+				}
+
+				uint8_t modrm = memory[registers.IP];
+				uint8_t reg1 = modrm & 0b111;
+				uint8_t reg2 = (modrm >> 3) & 0b111;
 
 				if (DEBUG) {
-					printf("%02X ", memory[registers.IP]);
+					printf("mov %s, %s", reg16_names[reg1], reg16_names[reg2]);
 				}
-				
-				switch (memory[registers.IP]) {
-					case MOV_AX_AX:
-						if (DEBUG) {
-							printf("mov ax, ax");
-						}
-						registers.AX.base = registers.AX.base;
-						break;
-					case MOV_AX_BX:
-						if (DEBUG) {
-							printf("mov ax, bx");
-						}
-						registers.AX.base = registers.BX.base;				
-						break;
-					case MOV_AX_CX:
-						if (DEBUG) {
-							printf("mov ax, cx");
-						}
-						registers.AX.base = registers.CX.base;
-						break;
-					case MOV_AX_DX:
-						if (DEBUG) {
-							printf("mov ax, dx");
-						}
-						registers.AX.base = registers.DX.base;
-						break;
-					case MOV_BX_AX:
-						if (DEBUG) {
-							printf("mov bx, ax");
-						}
-						registers.BX.base = registers.AX.base;
-						break;
-					case MOV_BX_BX:
-						if (DEBUG) {
-							printf("mov bx, bx");
-						}
-						registers.BX.base = registers.BX.base;
-						break;
-					case MOV_BX_CX:
-						if (DEBUG) {
-							printf("mov bx, cx");
-						}
-						registers.BX.base = registers.CX.base;
-						break;
-					case MOV_BX_DX:
-						if (DEBUG) {
-							printf("mov bx, dx");
-						}
-						registers.BX.base = registers.DX.base;
-						break;
-					case MOV_CX_AX:
-						if (DEBUG) {
-							printf("mov cx, ax");
-						}
-						registers.CX.base = registers.AX.base;
-						break;
-					case MOV_CX_BX:
-						if (DEBUG) {
-							printf("mov cx, bx");
-						}
-						registers.CX.base = registers.BX.base;
-						break;
-					case MOV_CX_CX:
-						if (DEBUG) {
-							printf("mov cx, cx");
-						}
-						registers.CX.base = registers.CX.base;
-						break;
-					case MOV_CX_DX:
-						if (DEBUG) {
-							printf("mov cx, dx");
-						}
-						registers.CX.base = registers.DX.base;
-						break;
-					case MOV_DX_AX:
-						if (DEBUG) {
-							printf("mov dx, ax");
-						}
-						registers.DX.base = registers.AX.base;
-						break;
-					case MOV_DX_BX:
-						if (DEBUG) {
-							printf("mov dx, bx");
-						}
-						registers.DX.base = registers.BX.base;
-						break;
-					case MOV_DX_CX:
-						if (DEBUG) {
-							printf("mov dx, cx");
-						}
-						registers.DX.base = registers.CX.base;
-						break;
-					case MOV_DX_DX:
-						if (DEBUG) {
-							printf("mov dx, dx");
-						}
-						registers.DX.base = registers.DX.base;
-						break;
-					default:
-						if (DEBUG) {
-							printf("Unknwon instruction!");
-						}
-						break;
-				}
+
+				*pregs16[reg1] = *pregs16[reg2];
 				break;
+			}
 			case AL_REG:
 				if (DEBUG) {
 					printf("%02X ", memory[registers.IP + 1]);
@@ -552,626 +302,54 @@ int main(int argc, char* argv[]) {
 
 				registers.DX.base = memory[++registers.IP] | (memory[++registers.IP] << 8);
 				break;
-			case ADD_8REG_REG:
-			    registers.IP++;
+			case ADD_8REG_REG: {
+				uint8_t modrm = memory[registers.IP];
+				uint8_t reg1 = modrm & 0b111;
+				uint8_t reg2 = (modrm >> 3) & 0b111;
 
-			    switch (memory[registers.IP]) {
-			        case OP_AX_AX:
-			            registers.AX.low += registers.AX.low;
-			            if (DEBUG) {
-			                printf("add al, al");
-			            }
-			            break;
-			        case OP_AX_BX:
-			            registers.AX.low += registers.BX.low;
-			            if (DEBUG) {
-			                printf("add al, bl");
-			            }
-			            break;
-			        case OP_AX_CX:
-			            registers.AX.low += registers.CX.low;
-			            if (DEBUG) {
-			                printf("add al, cl");
-			            }
-			            break;
-			        case OP_AX_DX:
-			            registers.AX.low += registers.DX.low;
-			            if (DEBUG) {
-			                printf("add al, dl");
-			            }
-			            break;
-			        case OP_BX_AX:
-			            registers.BX.low += registers.AX.low;
-			            if (DEBUG) {
-			                printf("add bl, al");
-			            }
-			            break;
-			        case OP_BX_BX:
-			            registers.BX.low += registers.BX.low;
-			            if (DEBUG) {
-			                printf("add bl, bl");
-			            }
-			            break;
-			        case OP_BX_CX:
-			            registers.BX.low += registers.CX.low;
-			            if (DEBUG) {
-			                printf("add bl, cl");
-			            }
-			            break;
-			        case OP_BX_DX:
-			            registers.BX.low += registers.DX.low;
-			            if (DEBUG) {
-			                printf("add bl, dl");
-			            }
-			            break;
-			        case OP_CX_AX:
-			            registers.CX.low += registers.AX.low;
-			            if (DEBUG) {
-			                printf("add cl, al");
-			            }
-			            break;
-			        case OP_CX_BX:
-			            registers.CX.low += registers.BX.low;
-			            if (DEBUG) {
-			                printf("add cl, bl");
-			            }
-			            break;
-			        case OP_CX_CX:
-			            registers.CX.low += registers.CX.low;
-			            if (DEBUG) {
-			                printf("add cl, cl");
-			            }
-			            break;
-			        case OP_CX_DX:
-			            registers.CX.low += registers.DX.low;
-			            if (DEBUG) {
-			                printf("add cl, dl");
-			            }
-			            break;
-			        case OP_DX_AX:
-			            registers.DX.low += registers.AX.low;
-			            if (DEBUG) {
-			                printf("add dl, al");
-			            }
-			            break;
-			        case OP_DX_BX:
-			            registers.DX.low += registers.BX.low;
-			            if (DEBUG) {
-			                printf("add dl, bl");
-			            }
-			            break;
-			        case OP_DX_CX:
-			            registers.DX.low += registers.CX.low;
-			            if (DEBUG) {
-			                printf("add dl, cl");
-			            }
-			            break;
-			        case OP_DX_DX:
-			            registers.DX.low += registers.DX.low;
-			            if (DEBUG) {
-			                printf("add dl, dl");
-			            }
-			            break;
-			        case AH_AH:
-			            registers.AX.high += registers.AX.high;
-			            if (DEBUG) {
-			                printf("add ah, ah");
-			            }
-			            break;
-			        case AH_BH:
-			            registers.AX.high += registers.BX.high;
-			            if (DEBUG) {
-			                printf("add ah, bh");
-			            }
-			            break;
-			        case AH_CH:
-			            registers.AX.high += registers.CX.high;
-			            if (DEBUG) {
-			                printf("add ah, ch");
-			            }
-			            break;
-			        case AH_DH:
-			            registers.AX.high += registers.DX.high;
-			            if (DEBUG) {
-			                printf("add ah, dh");
-			            }
-			            break;
-			        case BH_AH:
-			            registers.BX.high += registers.AX.high;
-			            if (DEBUG) {
-			                printf("add bh, ah");
-			            }
-			            break;
-			        case BH_BH:
-			            registers.BX.high += registers.BX.high;
-			            if (DEBUG) {
-			                printf("add bh, bh");
-			            }
-			            break;
-			        case BH_CH:
-			            registers.BX.high += registers.CX.high;
-			            if (DEBUG) {
-			                printf("add bh, ch");
-			            }
-			            break;
-			        case BH_DH:
-			            registers.BX.high += registers.DX.high;
-			            if (DEBUG) {
-			                printf("add bh, dh");
-			            }
-			            break;
-			        case CH_AH:
-			            registers.CX.high += registers.AX.high;
-			            if (DEBUG) {
-			                printf("add ch, ah");
-			            }
-			            break;
-			        case CH_BH:
-			            registers.CX.high += registers.BX.high;
-			            if (DEBUG) {
-			                printf("add ch, bh");
-			            }
-			            break;
-			        case CH_CH:
-			            registers.CX.high += registers.CX.high;
-			            if (DEBUG) {
-			                printf("add ch, ch");
-			            }
-			            break;
-			        case CH_DH:
-			            registers.CX.high += registers.DX.high;
-			            if (DEBUG) {
-			                printf("add ch, dh");
-			            }
-			            break;
-			        case DH_AH:
-			            registers.DX.high += registers.AX.high;
-			            if (DEBUG) {
-			                printf("add dh, ah");
-			            }
-			            break;
-			        case DH_BH:
-			            registers.DX.high += registers.BX.high;
-			            if (DEBUG) {
-			                printf("add dh, bh");
-			            }
-			            break;
-			        case DH_CH:
-			            registers.DX.high += registers.CX.high;
-			            if (DEBUG) {
-			                printf("add dh, ch");
-			            }
-			            break;
-			        case DH_DH:
-			            registers.DX.high += registers.DX.high;
-			            if (DEBUG) {
-			                printf("add dh, dh");
-			            }
-			            break;
-			        default:
-			            if (DEBUG) {
-			                printf("Unknown opcode!");
-			            }
-			            break;
-			    }
-			    break;
-			case ADD_16REG_REG:
-			    registers.IP++;
+				if (DEBUG) {
+					printf("add %s, %s", reg8_names[reg1], reg8_names[reg2]);
+				}
 
-			    switch (memory[registers.IP]) {
-			        case OP_AX_AX:
-			            registers.AX.base += registers.AX.base;
-			            if (DEBUG) {
-			                printf("add ax, ax");
-			            }
-			            break;
-			        case OP_AX_BX:
-			            registers.AX.base += registers.BX.base;
-			            if (DEBUG) {
-			                printf("add ax, bx");
-			            }
-			            break;
-			        case OP_AX_CX:
-			            registers.AX.base += registers.CX.base;
-			            if (DEBUG) {
-			                printf("add ax, cx");
-			            }
-			            break;
-			        case OP_AX_DX:
-			            registers.AX.base += registers.DX.base;
-			            if (DEBUG) {
-			                printf("add ax, dx");
-			            }
-			            break;
-			        case OP_BX_AX:
-			            registers.BX.base += registers.AX.base;
-			            if (DEBUG) {
-			                printf("add bx, ax");
-			            }
-			            break;
-			        case OP_BX_BX:
-			            registers.BX.base += registers.BX.base;
-			            if (DEBUG) {
-			                printf("add bx, bx");
-			            }
-			            break;
-			        case OP_BX_CX:
-			            registers.BX.base += registers.CX.base;
-			            if (DEBUG) {
-			                printf("add bx, cx");
-			            }
-			            break;
-			        case OP_BX_DX:
-			            registers.BX.base += registers.DX.base;
-			            if (DEBUG) {
-			                printf("add bx, dx");
-			            }
-			            break;
-			        case OP_CX_AX:
-			            registers.CX.base += registers.AX.base;
-			            if (DEBUG) {
-			                printf("add cx, ax");
-			            }
-			            break;
-			        case OP_CX_BX:
-			            registers.CX.base += registers.BX.base;
-			            if (DEBUG) {
-			                printf("add cx, bx");
-			            }
-			            break;
-			        case OP_CX_CX:
-			            registers.CX.base += registers.CX.base;
-			            if (DEBUG) {
-			                printf("add cx, cx");
-			            }
-			            break;
-			        case OP_CX_DX:
-			            registers.CX.base += registers.DX.base;
-			            if (DEBUG) {
-			                printf("add cx, dx");
-			            }
-			            break;
-			        case OP_DX_AX:
-			            registers.DX.base += registers.AX.base;
-			            if (DEBUG) {
-			                printf("add dx, ax");
-			            }
-			            break;
-			        case OP_DX_BX:
-			            registers.DX.base += registers.BX.base;
-			            if (DEBUG) {
-			                printf("add dx, bx");
-			            }
-			            break;
-			        case OP_DX_CX:
-			            registers.DX.base += registers.CX.base;
-			            if (DEBUG) {
-			                printf("add dx, cx");
-			            }
-			            break;
-			        case OP_DX_DX:
-			            registers.DX.base += registers.DX.base;
-			            if (DEBUG) {
-			                printf("add dx, dx");
-			            }
-			            break;
-			        default:
-			            if (DEBUG) {
-			                printf("Unknown opcode!");
-			            }
-			            break;
-			    }
-			    break;
-			case SUB_8REG_REG:
-			    registers.IP++;
+				*pregs8[reg1] += *pregs8[reg2];
+				break;
+			}
+			case ADD_16REG_REG: {
+				uint8_t modrm = memory[registers.IP];
+				uint8_t reg1 = modrm & 0b111;
+				uint8_t reg2 = (modrm >> 3) & 0b111;
 
-			    switch (memory[registers.IP]) {
-			        case OP_AX_AX:
-			            registers.AX.low -= registers.AX.low;
-			            if (DEBUG) {
-			                printf("sub al, al");
-			            }
-			            break;
-			        case OP_AX_BX:
-			            registers.AX.low -= registers.BX.low;
-			            if (DEBUG) {
-			                printf("sub al, bl");
-			            }
-			            break;
-			        case OP_AX_CX:
-			            registers.AX.low -= registers.CX.low;
-			            if (DEBUG) {
-			                printf("sub al, cl");
-			            }
-			            break;
-			        case OP_AX_DX:
-			            registers.AX.low -= registers.DX.low;
-			            if (DEBUG) {
-			                printf("sub al, dl");
-			            }
-			            break;
-			        case OP_BX_AX:
-			            registers.BX.low -= registers.AX.low;
-			            if (DEBUG) {
-			                printf("sub bl, al");
-			            }
-			            break;
-			        case OP_BX_BX:
-			            registers.BX.low -= registers.BX.low;
-			            if (DEBUG) {
-			                printf("sub bl, bl");
-			            }
-			            break;
-			        case OP_BX_CX:
-			            registers.BX.low -= registers.CX.low;
-			            if (DEBUG) {
-			                printf("sub bl, cl");
-			            }
-			            break;
-			        case OP_BX_DX:
-			            registers.BX.low -= registers.DX.low;
-			            if (DEBUG) {
-			                printf("sub bl, dl");
-			            }
-			            break;
-			        case OP_CX_AX:
-			            registers.CX.low -= registers.AX.low;
-			            if (DEBUG) {
-			                printf("sub cl, al");
-			            }
-			            break;
-			        case OP_CX_BX:
-			            registers.CX.low -= registers.BX.low;
-			            if (DEBUG) {
-			                printf("sub cl, bl");
-			            }
-			            break;
-			        case OP_CX_CX:
-			            registers.CX.low -= registers.CX.low;
-			            if (DEBUG) {
-			                printf("sub cl, cl");
-			            }
-			            break;
-			        case OP_CX_DX:
-			            registers.CX.low -= registers.DX.low;
-			            if (DEBUG) {
-			                printf("sub cl, dl");
-			            }
-			            break;
-			        case OP_DX_AX:
-			            registers.DX.low -= registers.AX.low;
-			            if (DEBUG) {
-			                printf("sub dl, al");
-			            }
-			            break;
-			        case OP_DX_BX:
-			            registers.DX.low -= registers.BX.low;
-			            if (DEBUG) {
-			                printf("sub dl, bl");
-			            }
-			            break;
-			        case OP_DX_CX:
-			            registers.DX.low -= registers.CX.low;
-			            if (DEBUG) {
-			                printf("sub dl, cl");
-			            }
-			            break;
-			        case OP_DX_DX:
-			            registers.DX.low -= registers.DX.low;
-			            if (DEBUG) {
-			                printf("sub dl, dl");
-			            }
-			            break;
-			        case AH_AH:
-			            registers.AX.high -= registers.AX.high;
-			            if (DEBUG) {
-			                printf("sub ah, ah");
-			            }
-			            break;
-			        case AH_BH:
-			            registers.AX.high -= registers.BX.high;
-			            if (DEBUG) {
-			                printf("sub ah, bh");
-			            }
-			            break;
-			        case AH_CH:
-			            registers.AX.high -= registers.CX.high;
-			            if (DEBUG) {
-			                printf("sub ah, ch");
-			            }
-			            break;
-			        case AH_DH:
-			            registers.AX.high -= registers.DX.high;
-			            if (DEBUG) {
-			                printf("sub ah, dh");
-			            }
-			            break;
-			        case BH_AH:
-			            registers.BX.high -= registers.AX.high;
-			            if (DEBUG) {
-			                printf("sub bh, ah");
-			            }
-			            break;
-			        case BH_BH:
-			            registers.BX.high -= registers.BX.high;
-			            if (DEBUG) {
-			                printf("sub bh, bh");
-			            }
-			            break;
-			        case BH_CH:
-			            registers.BX.high -= registers.CX.high;
-			            if (DEBUG) {
-			                printf("sub bh, ch");
-			            }
-			            break;
-			        case BH_DH:
-			            registers.BX.high -= registers.DX.high;
-			            if (DEBUG) {
-			                printf("sub bh, dh");
-			            }
-			            break;
-			        case CH_AH:
-			            registers.CX.high -= registers.AX.high;
-			            if (DEBUG) {
-			                printf("sub ch, ah");
-			            }
-			            break;
-			        case CH_BH:
-			            registers.CX.high -= registers.BX.high;
-			            if (DEBUG) {
-			                printf("sub ch, bh");
-			            }
-			            break;
-			        case CH_CH:
-			            registers.CX.high -= registers.CX.high;
-			            if (DEBUG) {
-			                printf("sub ch, ch");
-			            }
-			            break;
-			        case CH_DH:
-			            registers.CX.high -= registers.DX.high;
-			            if (DEBUG) {
-			                printf("sub ch, dh");
-			            }
-			            break;
-			        case DH_AH:
-			            registers.DX.high -= registers.AX.high;
-			            if (DEBUG) {
-			                printf("sub dh, ah");
-			            }
-			            break;
-			        case DH_BH:
-			            registers.DX.high -= registers.BX.high;
-			            if (DEBUG) {
-			                printf("sub dh, bh");
-			            }
-			            break;
-			        case DH_CH:
-			            registers.DX.high -= registers.CX.high;
-			            if (DEBUG) {
-			                printf("sub dh, ch");
-			            }
-			            break;
-			        case DH_DH:
-			            registers.DX.high -= registers.DX.high;
-			            if (DEBUG) {
-			                printf("sub dh, dh");
-			            }
-			            break;
-			        default:
-			            if (DEBUG) {
-			                printf("Unknown opcode!");
-			            }
-			            break;
-			    }
-			    break;
-			case SUB_16REG_REG:
-			    registers.IP++;
+				if (DEBUG) {
+					printf("add %s, %s", reg16_names[reg1], reg16_names[reg2]);
+				}
 
-			    switch (memory[registers.IP]) {
-			        case OP_AX_AX:
-			            registers.AX.base -= registers.AX.base;
-			            if (DEBUG) {
-			                printf("sub ax, ax");
-			            }
-			            break;
-			        case OP_AX_BX:
-			            registers.AX.base -= registers.BX.base;
-			            if (DEBUG) {
-			                printf("sub ax, bx");
-			            }
-			            break;
-			        case OP_AX_CX:
-			            registers.AX.base -= registers.CX.base;
-			            if (DEBUG) {
-			                printf("sub ax, cx");
-			            }
-			            break;
-			        case OP_AX_DX:
-			            registers.AX.base -= registers.DX.base;
-			            if (DEBUG) {
-			                printf("sub ax, dx");
-			            }
-			            break;
-			        case OP_BX_AX:
-			            registers.BX.base -= registers.AX.base;
-			            if (DEBUG) {
-			                printf("sub bx, ax");
-			            }
-			            break;
-			        case OP_BX_BX:
-			            registers.BX.base -= registers.BX.base;
-			            if (DEBUG) {
-			                printf("sub bx, bx");
-			            }
-			            break;
-			        case OP_BX_CX:
-			            registers.BX.base -= registers.CX.base;
-			            if (DEBUG) {
-			                printf("sub bx, cx");
-			            }
-			            break;
-			        case OP_BX_DX:
-			            registers.BX.base -= registers.DX.base;
-			            if (DEBUG) {
-			                printf("sub bx, dx");
-			            }
-			            break;
-			        case OP_CX_AX:
-			            registers.CX.base -= registers.AX.base;
-			            if (DEBUG) {
-			                printf("sub cx, ax");
-			            }
-			            break;
-			        case OP_CX_BX:
-			            registers.CX.base -= registers.BX.base;
-			            if (DEBUG) {
-			                printf("sub cx, bx");
-			            }
-			            break;
-			        case OP_CX_CX:
-			            registers.CX.base -= registers.CX.base;
-			            if (DEBUG) {
-			                printf("sub cx, cx");
-			            }
-			            break;
-			        case OP_CX_DX:
-			            registers.CX.base -= registers.DX.base;
-			            if (DEBUG) {
-			                printf("sub cx, dx");
-			            }
-			            break;
-			        case OP_DX_AX:
-			            registers.DX.base -= registers.AX.base;
-			            if (DEBUG) {
-			                printf("sub dx, ax");
-			            }
-			            break;
-			        case OP_DX_BX:
-			            registers.DX.base -= registers.BX.base;
-			            if (DEBUG) {
-			                printf("sub dx, bx");
-			            }
-			            break;
-			        case OP_DX_CX:
-			            registers.DX.base -= registers.CX.base;
-			            if (DEBUG) {
-			                printf("sub dx, cx");
-			            }
-			            break;
-			        case OP_DX_DX:
-			            registers.DX.base -= registers.DX.base;
-			            if (DEBUG) {
-			                printf("sub dx, dx");
-			            }
-			            break;
-			        default:
-			            if (DEBUG) {
-			                printf("Unknown opcode!");
-			            }
-			            break;
-			    }
-			    break;
+				*pregs16[reg1] += *pregs16[reg2];
+				break;
+			}
+			case SUB_8REG_REG: {
+				uint8_t modrm = memory[registers.IP];
+				uint8_t reg1 = modrm & 0b111;
+				uint8_t reg2 = (modrm >> 3) & 0b111;
+
+				if (DEBUG) {
+					printf("sub %s, %s", reg8_names[reg1], reg8_names[reg2]);
+				}
+
+				*pregs8[reg1] -= *pregs8[reg2];
+				break;
+			}
+			case SUB_16REG_REG: {
+				uint8_t modrm = memory[registers.IP];
+				uint8_t reg1 = modrm & 0b111;
+				uint8_t reg2 = (modrm >> 3) & 0b111;
+
+				if (DEBUG) {
+					printf("sub %s, %s", reg16_names[reg1], reg16_names[reg2]);
+				}
+
+				*pregs16[reg1] -= *pregs16[reg2];
+				break;
+			}
 			case ADD_AL_VALUE:
 				if (DEBUG) {
 					printf("add al, %02X", memory[++registers.IP]);
@@ -1281,207 +459,30 @@ int main(int argc, char* argv[]) {
 						break;
 				}
 				break;
-			case AND_8REG:
-				switch (memory[++registers.IP]) {
-					case AL_AL:
-						if (DEBUG) {
-			                printf("and al, al");
-			            }
-			            registers.AX.low &= registers.AX.low;
-			            break;
-			        case AL_BL:
-			        	if (DEBUG) {
-			                printf("and al, bl");
-			            }
-			            registers.AX.low &= registers.BX.low;
-			            break;
-			        case AL_CL:
-			        	if (DEBUG) {
-			                printf("and al, cl");
-			            }
-			            registers.AX.low &= registers.CX.low;
-			            break;
-			        case AL_DL:
-			        	if (DEBUG) {
-			                printf("and al, dl");
-			            }
-			            registers.AX.low &= registers.DX.low;
-			            break;
-			        case BL_AL:
-			        	if (DEBUG) {
-			                printf("and bl, al");
-			            }
-			            registers.BX.low &= registers.AX.low;
-			            break;
-			        case BL_BL:
-			        	if (DEBUG) {
-			                printf("and bl, bl");
-			            }
-			            registers.BX.low &= registers.BX.low;
-			            break;
-			        case BL_CL:
-			        	if (DEBUG) {
-			                printf("and bl, cl");
-			            }
-			            registers.BX.low &= registers.CX.low;
-			            break;
-			        case BL_DL:
-			        	if (DEBUG) {
-			                printf("and bl, dl");
-			            }
-			            registers.BX.low &= registers.DX.low;
-			            break;
-			        case CL_AL:
-			        	if (DEBUG) {
-			                printf("and cl, al");
-			            }
-			            registers.CX.low &= registers.AX.low;
-			            break;
-			        case CL_BL:
-			        	if (DEBUG) {
-			                printf("and cl, bl");
-			            }
-			            registers.CX.low &= registers.BX.low;
-			            break;
-			        case CL_CL:
-			        	if (DEBUG) {
-			                printf("and cl, cl");
-			            }
-			            registers.CX.low &= registers.CX.low;
-			            break;
-			        case CL_DL:
-			        	if (DEBUG) {
-			                printf("and cl, dl");
-			            }
-			            registers.CX.low &= registers.DX.low;
-			            break;
-			        case DL_AL:
-			        	if (DEBUG) {
-			                printf("and dl, al");
-			            }
-			            registers.DX.low &= registers.AX.low;
-			            break;
-			        case DL_BL:
-			        	if (DEBUG) {
-			                printf("and dl, bl");
-			            }
-			            registers.DX.low &= registers.BX.low;
-			            break;
-			        case DL_CL:
-			        	if (DEBUG) {
-			                printf("and dl, cl");
-			            }
-			            registers.DX.low &= registers.CX.low;
-			            break;
-			        case DL_DL:
-			        	if (DEBUG) {
-			                printf("and dl, dl");
-			            }
-			            registers.DX.low &= registers.DX.low;
-			            break;
-			        case AH_AH:
-			        	if (DEBUG) {
-			                printf("and ah, ah");
-			            }
-			            registers.AX.high &= registers.AX.high;
-			            break;
-			        case AH_BH:
-			        	if (DEBUG) {
-			                printf("and ah, bh");
-			            }
-			            registers.AX.high &= registers.BX.high;
-			            break;
-			        case AH_CH:
-			        	if (DEBUG) {
-			                printf("and ah, ch");
-			            }
-			            registers.AX.high &= registers.CX.high;
-			            break;
-			        case AH_DH:
-			        	if (DEBUG) {
-			                printf("and ah, dh");
-			            }
-			            registers.AX.high &= registers.DX.high;
-			            break;
-			        case BH_AH:
-			        	if (DEBUG) {
-			                printf("and bh, ah");
-			            }
-			            registers.BX.high &= registers.AX.high;
-			            break;
-			        case BH_BH:
-			        	if (DEBUG) {
-			                printf("and bh, bh");
-			            }
-			            registers.BX.high &= registers.BX.high;
-			            break;
-			        case BH_CH:
-			        	if (DEBUG) {
-			                printf("and bh, ch");
-			            }
-			            registers.BX.high &= registers.CX.high;
-			            break;
-			        case BH_DH:
-			        	if (DEBUG) {
-			                printf("and bh, dh");
-			            }
-			            registers.BX.high &= registers.DX.high;
-			            break;
-			        case CH_AH:
-			        	if (DEBUG) {
-			                printf("and ch, ah");
-			            }
-			            registers.CX.high &= registers.AX.high;
-			            break;
-			        case CH_BH:
-			        	if (DEBUG) {
-			                printf("and ch, bh");
-			            }
-			            registers.CX.high &= registers.BX.high;
-			            break;
-			        case CH_CH:
-			        	if (DEBUG) {
-			                printf("and ch, ch");
-			            }
-			            registers.CX.high &= registers.CX.high;
-			            break;
-			        case CH_DH:
-			        	if (DEBUG) {
-			                printf("and ch, dh");
-			            }
-			            registers.CX.high &= registers.DX.high;
-			            break;
-			        case DH_AH:
-			        	if (DEBUG) {
-			                printf("and dh, ah");
-			            }
-			            registers.DX.high &= registers.AX.high;
-			            break;
-			        case DH_BH:
-			        	if (DEBUG) {
-			                printf("and dh, bh");
-			            }
-			            registers.DX.high &= registers.BX.high;
-			            break;
-			        case DH_CH:
-			        	if (DEBUG) {
-			                printf("and dh, ch");
-			            }
-			            registers.DX.high &= registers.CX.high;
-			            break;
-			        case DH_DH:
-			        	if (DEBUG) {
-			                printf("and dh, dh");
-			            }
-			            registers.DX.high &= registers.DX.high;
-			            break;
-			        default:
-			        	if (DEBUG) {
-			        		printf("Unknown opcode!");
-			        	}
-			        	break;
+			case AND_8REG: {
+				uint8_t modrm = memory[++registers.IP];
+				uint8_t reg1 = modrm & 0b111;
+				uint8_t reg2 = (modrm >> 3) & 0b111;
+
+				if (DEBUG) {
+					printf("and %s, %s", reg8_names[reg1], reg8_names[reg2]);
 				}
+
+				*pregs8[reg1] &= *pregs8[reg2];
 				break;
+			}
+			case AND_16REG: {
+				uint8_t modrm = memory[++registers.IP];
+				uint8_t reg1 = modrm & 0b111;
+				uint8_t reg2 = (modrm >> 3) & 0b111;
+
+				if (DEBUG) {
+					printf("and %s, %s", reg16_names[reg1], reg16_names[reg2]);
+				}
+
+				*pregs16[reg1] &= *pregs16[reg2];
+				break;
+			}
 			case NOP:
 				if (DEBUG) {
 					printf("nop");
