@@ -503,7 +503,7 @@ int main(int argc, char* argv[]) {
 		}
 
 		if (REGISTERS_VIEW) {
-			printf("\tAX = %04X\tBX = %04X\tCX = %04X\tDX = %04X", registers.AX, registers.BX, registers.CX, registers.DX);
+			printf("\tAX = %04X\tBX = %04X\tCX = %04X\tDX = %04X", registers.AX.base, registers.BX.base, registers.CX.base, registers.DX.base);
 		}
 
 		printf("\n");
