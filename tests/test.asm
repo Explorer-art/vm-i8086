@@ -1,3 +1,5 @@
 [bits 16]
 
-add al, 5
+mov ax, 5
+xor ax, ax
+hlt
