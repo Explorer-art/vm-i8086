@@ -41,6 +41,7 @@ typedef struct {
 #define BX_REG 0xBB
 #define MOV_8REG_REG 0x88
 #define MOV_16REG_REG 0x89
+#define MOV_REG_VALUE 0b1011
 #define MOV_AX_AX 0xC0
 #define MOV_AX_BX 0xD8
 #define MOV_AX_CX 0xC8
@@ -80,6 +81,10 @@ typedef struct {
 #define INC_CX 0x41
 #define INC_DX 0x42
 #define INC_BX 0x43
+#define DEC_AX 0x48
+#define DEC_CX 0x49
+#define DEC_DX 0x4A
+#define DEC_BX 0x4B
 #define INC_AL 0xC0
 #define INC_CL 0xC1
 #define INC_DL 0xC2
@@ -88,10 +93,6 @@ typedef struct {
 #define INC_CH 0xC5
 #define INC_DH 0xC6
 #define INC_BH 0xC7
-#define DEC_AX 0x48
-#define DEC_CX 0x49
-#define DEC_DX 0x4A
-#define DEC_BX 0x4B
 #define DEC_AL 0xC8
 #define DEC_CL 0xC9
 #define DEC_DL 0xCA
@@ -102,6 +103,7 @@ typedef struct {
 #define DEC_BH 0xCF
 #define AND_8REG_REG 0x20
 #define AND_16REG_REG 0x21
+#define AND_AL_VALUE 0x24
 #define OR_8REG_REG 0x08
 #define OR_16REG_REG 0x09
 #define NOT_8REG 0xF6

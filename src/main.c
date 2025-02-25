@@ -18,10 +18,7 @@ Virtual Machine based on Intel 8086 processor
 Author: Truzme_
 License: MIT
 
-===============================================
-
 CHANGELOG:
-
 v0.1.3
 - Added AND opcode
 - Code optimization
@@ -30,6 +27,56 @@ v0.1.4
 - Added OR, NOT, XOR opcodes
 
 */
+
+bool DEBUG = false;
+Registers registers = {0};
+uint8_t *memory;
+
+uint8_t *pregs8[8] = {
+	&registers.AX.low, &registers.CX.low, &registers.DX.low, &registers.BX.low,
+	&registers.AX.high, &registers.CX.high, &registers.DX.high, &registers.BX.high
+};
+
+char *reg8_names[8] = {
+	"al", "cl", "dl", "bl",
+	"ah", "ch", "dh", "bh"
+};
+
+uint16_t *pregs16[4] = {
+	&registers.AX.base, &registers.CX.base, &registers.DX.base, &registers.BX.base
+};
+
+char *reg16_names[4] = {
+	"ax", "cx", "dx", "bx"
+};
+
+void mov8(uint8_t opcode) {
+	uint8_t index = opcode - AL_REG;
+
+	if (DEBUG) {
+		printf("%02X ", memory[++registers.IP]);
+	}
+
+	if (DEBUG) {
+		printf("mov %s, %X", reg8_names[index], memory[registers.IP]);
+	}
+
+	*pregs8[index] = memory[registers.IP];
+}
+
+void mov16(uint8_t opcode) {
+	uint8_t index = opcode - AX_REG;
+
+	if (DEBUG) {
+		printf("%02X ", memory[++registers.IP]);
+	}
+
+	if (DEBUG) {
+		printf("mov %s, %X", reg16_names[index], memory[registers.IP] | (memory[registers.IP + 1] << 8));
+	}
+
+	*pregs16[index] = memory[registers.IP] | (memory[++registers.IP] << 8);
+}
 
 void load(uint8_t *memory, FILE *fp, size_t file_length) {
 	uint8_t buffer[BUFFER_SIZE];
@@ -58,26 +105,6 @@ void memory_dump(char *filename, uint8_t *memory) {
 }
 
 int main(int argc, char* argv[]) {
-	Registers registers = {0};
-
-	uint8_t *pregs8[8] = {
-		&registers.AX.low, &registers.CX.low, &registers.DX.low, &registers.BX.low,
-		&registers.AX.high, &registers.CX.high, &registers.DX.high, &registers.BX.high
-	};
-
-	char *reg8_names[8] = {
-		"al", "cl", "dl", "bl",
-		"ah", "ch", "dh", "bh"
-	};
-
-	uint16_t *pregs16[4] = {
-		&registers.AX.base, &registers.CX.base, &registers.DX.base, &registers.BX.base
-	};
-
-	char *reg16_names[4] = {
-		"ax", "cx", "dx", "bx"
-	};
-
 	if (argc < 2) {
 		printf("Usage: %s <file> [options]\n\n", argv[0]);
 		return 1;
@@ -95,7 +122,6 @@ int main(int argc, char* argv[]) {
 		return 0;
 	}
 
-	bool DEBUG = false;
 	bool REGISTERS_VIEW = false;
 	bool MEMORY_DUMP = false;
 
@@ -111,7 +137,7 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-	uint8_t *memory = malloc(MEMORY_SIZE);
+	memory = malloc(MEMORY_SIZE);
 
 	FILE *fp = fopen(argv[1], "rb");
 
@@ -173,136 +199,20 @@ int main(int argc, char* argv[]) {
 				break;
 			}
 			case AL_REG:
-				if (DEBUG) {
-					printf("%02X ", memory[++registers.IP]);
-				}
-
-				if (DEBUG) {
-					printf("mov al, %X", memory[registers.IP]);
-				}
-
-				registers.AX.low = memory[registers.IP];
-				break;
 			case BL_REG:
-				if (DEBUG) {
-					printf("%02X ", memory[++registers.IP]);
-				}
-
-				if (DEBUG) {
-					printf("mov bl, %X", memory[registers.IP]);
-				}
-
-				registers.BX.low = memory[registers.IP];
-				break;
 			case CL_REG:
-				if (DEBUG) {
-					printf("%02X ", memory[++registers.IP]);
-				}
-
-				if (DEBUG) {
-					printf("mov cl, %X", memory[registers.IP]);
-				}
-
-				registers.CX.low = memory[registers.IP];
-				break;
 			case DL_REG:
-				if (DEBUG) {
-					printf("%02X ", memory[++registers.IP]);
-				}
-
-				if (DEBUG) {
-					printf("mov dl, %X", memory[registers.IP]);
-				}
-
-				registers.DX.low = memory[registers.IP];
-				break;
 			case AH_REG:
-				if (DEBUG) {
-					printf("%02X ", memory[++registers.IP]);
-				}
-
-				if (DEBUG) {
-					printf("mov ah, %X", memory[registers.IP]);
-				}
-
-				registers.AX.high = memory[registers.IP];
-				break;
 			case BH_REG:
-				if (DEBUG) {
-					printf("%02X ", memory[++registers.IP]);
-				}
-
-				if (DEBUG) {
-					printf("mov bh, %X", memory[registers.IP]);
-				}
-
-				registers.BX.high = memory[registers.IP];
-				break;
 			case CH_REG:
-				if (DEBUG) {
-					printf("%02X ", memory[++registers.IP]);
-				}
-
-				if (DEBUG) {
-					printf("mov ch, %X", memory[registers.IP]);
-				}
-
-				registers.CX.high = memory[registers.IP];
-				break;
 			case DH_REG:
-				if (DEBUG) {
-					printf("%02X ", memory[++registers.IP]);
-				}
-
-				if (DEBUG) {
-					printf("mov dh, %X", memory[registers.IP]);
-				}
-
-				registers.DX.high = memory[registers.IP];
+				mov8(memory[registers.IP]);
 				break;
 			case AX_REG:
-				if (DEBUG) {
-					printf("%02X %02X ", memory[++registers.IP], memory[registers.IP + 1]);
-				}
-
-				if (DEBUG) {
-					printf("mov ax, %X", memory[registers.IP] | (memory[registers.IP + 1] << 8));
-				}
-
-				registers.AX.base = memory[registers.IP] | (memory[++registers.IP] << 8);
-				break;
 			case BX_REG:
-				if (DEBUG) {
-					printf("%02X %02X ", memory[++registers.IP], memory[registers.IP + 1]);
-				}
-
-				if (DEBUG) {
-					printf("mov bx, %X", memory[registers.IP] | (memory[registers.IP + 1] << 8));
-				}
-
-				registers.BX.base = memory[registers.IP] | (memory[++registers.IP] << 8);
-				break;
 			case CX_REG:
-				if (DEBUG) {
-					printf("%02X %02X ", memory[++registers.IP], memory[registers.IP + 1]);
-				}
-
-				if (DEBUG) {
-					printf("mov cx, %X", memory[registers.IP] | (memory[registers.IP + 1] << 8));
-				}
-
-				registers.CX.base = memory[registers.IP] | (memory[++registers.IP] << 8);
-				break;
 			case DX_REG:
-				if (DEBUG) {
-					printf("%02X %02X ", memory[++registers.IP], memory[registers.IP + 1]);
-				}
-
-				if (DEBUG) {
-					printf("mov dx, %X", memory[registers.IP] | (memory[registers.IP + 1] << 8));
-				}
-
-				registers.DX.base = memory[registers.IP] | (memory[++registers.IP] << 8);
+				mov16(memory[registers.IP]);
 				break;
 			case ADD_8REG_REG: {
 				uint8_t modrm = memory[registers.IP];
@@ -358,128 +268,89 @@ int main(int argc, char* argv[]) {
 				}
 				registers.AX.low += memory[registers.IP];
 				break;
-			case ADD_8REG_VALUE:
-				registers.IP++;
+			case ADD_8REG_VALUE: {
+				uint8_t index = memory[++registers.IP] - 0xC0; // 0xC0 - AL (8 bits)
 
-				switch (memory[registers.IP++]) {
-					case ADD_BL:
-						if (DEBUG) {
-							printf("add bl, %X", memory[registers.IP]);
-						}
-						registers.BX.low += memory[registers.IP];
-						break;
-					case ADD_CL:
-						if (DEBUG) {
-							printf("add cl, %X", memory[registers.IP]);
-						}
-						registers.CX.low += memory[registers.IP];
-						break;
-					case ADD_DL:
-						if (DEBUG) {
-							printf("add dl, %X", memory[registers.IP]);
-						}
-						registers.DX.low += memory[registers.IP];
-						break;
-					case ADD_AH:
-						if (DEBUG) {
-							printf("add ah, %X", memory[registers.IP]);
-						}
-						registers.AX.high += memory[registers.IP];
-					case ADD_BH:
-						if (DEBUG) {
-							printf("add bh, %X", memory[registers.IP]);
-						}
-						registers.BX.high += memory[registers.IP];
-					case ADD_CH:
-						if (DEBUG) {
-							printf("add ch, %X", memory[registers.IP]);
-						}
-						registers.CX.high += memory[registers.IP];
-					case ADD_DH:
-						if (DEBUG) {
-							printf("add dh, %X", memory[registers.IP]);
-						}
-						registers.DX.high += memory[registers.IP];
+				if (DEBUG) {
+					printf("add %s, %X", reg8_names[index], memory[++registers.IP]);
 				}
+
+				*pregs8[index] += memory[registers.IP];
 				break;
+			}
+			case ADD_16REG_VALUE: {
+				uint8_t index = memory[++registers.IP] - 0xC0; // 0xC0 - AX (16 bits)
+
+				if (DEBUG) {
+					printf("add %s, %X", reg16_names[index], memory[++registers.IP]);
+				}
+
+				*pregs16[index] += memory[registers.IP];
+				break;
+			}
 			case INC_AX:
+				if (DEBUG) {
+					printf("inc ax");
+				}
 				registers.AX.base++;
 				break;
 			case INC_BX:
+				if (DEBUG) {
+					printf("inc bx");
+				}
 				registers.BX.base++;
 				break;
 			case INC_CX:
+				if (DEBUG) {
+					printf("inc cx");
+				}
 				registers.CX.base++;
 				break;
 			case INC_DX:
+				if (DEBUG) {
+					printf("inc dx");
+				}
 				registers.DX.base++;
 				break;
 			case DEC_AX:
+				if (DEBUG) {
+					printf("dec ax");
+				}
 				registers.AX.base--;
 				break;
 			case DEC_BX:
+				if (DEBUG) {
+					printf("dec bx");
+				}
 				registers.BX.base--;
 				break;
 			case DEC_CX:
+				if (DEBUG) {
+					printf("dec cx");
+				}
 				registers.CX.base--;
 				break;
 			case DEC_DX:
+				if (DEBUG) {
+					printf("dec dx");
+				}
 				registers.DX.base--;
 				break;
 			case INC_DEC:
-				if (DEBUG) {
-					printf("inc/dec");
-				}
+				uint8_t index = memory[++registers.IP] - 0xC0;
 
-				switch(memory[++registers.IP]) {
-					case INC_AL:
-						registers.AX.low++;
-						break;
-					case INC_BL:
-						registers.BX.low++;
-						break;
-					case INC_CL:
-						registers.CX.low++;
-						break;
-					case INC_DL:
-						registers.DX.low++;
-						break;
-					case INC_AH:
-						registers.AX.high++;
-						break;
-					case INC_BH:
-						registers.BX.high++;
-						break;
-					case INC_CH:
-						registers.CX.high++;
-						break;
-					case INC_DH:
-						registers.DX.high++;
-						break;
-					case DEC_AL:
-						registers.AX.low--;
-						break;
-					case DEC_BL:
-						registers.BX.low--;
-						break;
-					case DEC_CL:
-						registers.CX.low--;
-						break;
-					case DEC_DL:
-						registers.DX.low--;
-						break;
-					case DEC_AH:
-						registers.AX.high--;
-						break;
-					case DEC_BH:
-						registers.BX.high--;
-						break;
-					case DEC_CH:
-						registers.CX.high--;
-						break;
-					case DEC_DH:
-						registers.DX.high--;
-						break;
+				if (index >= 0 && index <= 7) {
+					if (DEBUG) {
+						printf("inc %s", reg8_names[index]);
+					}
+
+					(*pregs8)++;
+				} else {
+					if (DEBUG) {
+						printf("dec %s", reg8_names[index]);
+					}
+
+					(*pregs8)--;
 				}
 				break;
 			case AND_8REG_REG: {
@@ -506,6 +377,12 @@ int main(int argc, char* argv[]) {
 				*pregs16[reg1] &= *pregs16[reg2];
 				break;
 			}
+			case AND_AL_VALUE:
+				if (DEBUG) {
+					printf("and al, %X", memory[++registers.IP]);
+				}
+				registers.AX.low &= memory[registers.IP];
+				break;
 			case OR_8REG_REG: {
 				uint8_t modrm = memory[++registers.IP];
 				uint8_t reg1 = modrm & 0b111;
