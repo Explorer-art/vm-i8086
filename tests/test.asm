@@ -1,3 +1,5 @@
 [bits 16]
 
-and cl, 5
+mov ax, 250
+and ax, 180
+hlt

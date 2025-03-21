@@ -269,23 +269,57 @@ int main(int argc, char* argv[]) {
 				registers.AX.low += memory[registers.IP];
 				break;
 			case ADD_8REG_VALUE: {
-				uint8_t index = memory[++registers.IP] - 0xC0; // 0xC0 - AL (8 bits)
+				switch ((memory[++registers.IP] - 0xC0) <= 7) {
+					// AND_8REG_VALUE
+					case 0: {
+						uint8_t index = memory[registers.IP] - 0xE0; // 0xE0 - AL (8 bits)
 
-				if (DEBUG) {
-					printf("add %s, %X", reg8_names[index], memory[++registers.IP]);
+						if (DEBUG) {
+							printf("and %s, %X", reg8_names[index], memory[++registers.IP]);
+						}
+
+						*pregs8[index] &= memory[registers.IP];
+						break;
+					}
+					// ADD_8REG_VALUE
+					case 1: {
+						uint8_t index = memory[registers.IP] - 0xC0; // 0xC0 - AL (8 bits)
+
+						if (DEBUG) {
+							printf("add %s, %X", reg8_names[index], memory[++registers.IP]);
+						}
+
+						*pregs8[index] += memory[registers.IP];
+						break;
+					}
 				}
-
-				*pregs8[index] += memory[registers.IP];
 				break;
 			}
 			case ADD_16REG_VALUE: {
-				uint8_t index = memory[++registers.IP] - 0xC0; // 0xC0 - AX (16 bits)
+				switch ((memory[++registers.IP] - 0xC0) <= 7) {
+					// AND_16REG_VALUE
+					case 0: {
+						uint8_t index = memory[registers.IP] - 0xE0; // 0xE0 - AL (8 bits)
 
-				if (DEBUG) {
-					printf("add %s, %X", reg16_names[index], memory[++registers.IP]);
+						if (DEBUG) {
+							printf("and %s, %X", reg16_names[index], memory[++registers.IP]);
+						}
+
+						*pregs16[index] &= memory[registers.IP];
+						break;
+					}
+					// ADD_16REG_VALUE
+					case 1: {
+						uint8_t index = memory[registers.IP] - 0xC0; // 0xC0 - AX (16 bits)
+
+						if (DEBUG) {
+							printf("add %s, %X", reg16_names[index], memory[++registers.IP]);
+						}
+
+						*pregs16[index] += memory[registers.IP];
+						break;
+					}
 				}
-
-				*pregs16[index] += memory[registers.IP];
 				break;
 			}
 			case INC_AX:
@@ -383,6 +417,27 @@ int main(int argc, char* argv[]) {
 				}
 				registers.AX.low &= memory[registers.IP];
 				break;
+			case AND_AX_VALUE: {
+				uint16_t value = (memory[++registers.IP] * memory[++registers.IP]) + memory[registers.IP - 1];
+
+				if (DEBUG) {
+					printf("and ax, %X", value);
+				}
+
+				*pregs16[0] &= value;
+				break;
+			}
+			case AND_16REG_VALUE: {
+				uint8_t index = memory[++registers.IP] - 0xE0;
+				uint16_t value = (memory[++registers.IP] * memory[++registers.IP]) + memory[registers.IP - 1];
+
+				if (DEBUG) {
+					printf("and %s, %X", reg16_names[index], value);
+				}
+
+				*pregs16[index] &= value;
+				break;
+			}
 			case OR_8REG_REG: {
 				uint8_t modrm = memory[++registers.IP];
 				uint8_t reg1 = modrm & 0b111;

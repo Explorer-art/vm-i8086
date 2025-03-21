@@ -104,6 +104,8 @@ typedef struct {
 #define AND_8REG_REG 0x20
 #define AND_16REG_REG 0x21
 #define AND_AL_VALUE 0x24
+#define AND_AX_VALUE 0x25
+#define AND_16REG_VALUE 0x81
 #define OR_8REG_REG 0x08
 #define OR_16REG_REG 0x09
 #define NOT_8REG 0xF6
