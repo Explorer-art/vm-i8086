@@ -1,5 +1,5 @@
 [bits 16]
 
-mov ax, 250
-and ax, 180
+mov cx, 1
+or cx, 2
 hlt
