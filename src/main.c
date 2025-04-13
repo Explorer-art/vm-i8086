@@ -50,6 +50,47 @@ char *reg16_names[4] = {
 	"ax", "cx", "dx", "bx"
 };
 
+void read(uint8_t *memory, FILE *fp, size_t file_length) {
+	uint8_t buffer[BUFFER_SIZE];
+	uint8_t *memory_ptr = memory;
+	int bytes_read;
+
+	while ((bytes_read = fread(buffer, 1, sizeof(buffer), fp)) > 0) {
+		memcpy(memory_ptr, buffer, bytes_read);
+		memory_ptr += bytes_read;
+	}
+}
+
+void registers_dump(const char* filename, Registers* regs) {
+	FILE* fp = fopen(filename, "w");
+
+	if (fp == NULL) {
+		printf("Erorr opening file %s\n", filename);
+		exit(1);
+	}
+
+	fprintf(fp, "AL:0x%X\nBL:0x%X\nCL:0x%X\nDL:0x%X\n", regs->AX.low, regs->BX.low, regs->CX.low, regs->DX.low);
+	fprintf(fp, "AH:0x%X\nBH:0x%X\nCH:0x%X\nDH:0x%X\n", regs->AX.high, regs->BX.high, regs->CX.high, regs->DX.high);
+	fprintf(fp, "AX:0x%X\nBX:0x%X\nCX:0x%X\nDX:0x%X\n", regs->AX.base, regs->BX.base, regs->CX.base, regs->DX.base);
+
+	fclose(fp);
+}
+
+void memory_dump(const char *filename, uint8_t *memory) {
+	FILE *fp = fopen(filename, "wb");
+
+	if (fp == NULL) {
+		printf("Error opening file %s\n", filename);
+		exit(1);
+	}
+
+	fwrite(memory, 1, MEMORY_SIZE, fp);
+
+	fclose(fp);
+
+	printf("Memory dumped!\n");
+}
+
 void mov8(uint8_t opcode) {
 	uint8_t index = opcode - AL_REG;
 
@@ -78,32 +119,6 @@ void mov16(uint8_t opcode) {
 	*pregs16[index] = memory[registers.IP] | (memory[++registers.IP] << 8);
 }
 
-void load(uint8_t *memory, FILE *fp, size_t file_length) {
-	uint8_t buffer[BUFFER_SIZE];
-	uint8_t *memory_ptr = memory;
-	int bytes_read;
-
-	while ((bytes_read = fread(buffer, 1, sizeof(buffer), fp)) > 0) {
-		memcpy(memory_ptr, buffer, bytes_read);
-		memory_ptr += bytes_read;
-	}
-}
-
-void memory_dump(char *filename, uint8_t *memory) {
-	FILE *fp = fopen(filename, "wb");
-
-	if (fp == NULL) {
-		printf("Error opening file!\n");
-		exit(1);
-	}
-
-	fwrite(memory, 1, MEMORY_SIZE, fp);
-
-	fclose(fp);
-
-	printf("Memory dumped!\n");
-}
-
 int main(int argc, char* argv[]) {
 	if (argc < 2) {
 		printf("Usage: %s <file> [options]\n\n", argv[0]);
@@ -114,7 +129,8 @@ int main(int argc, char* argv[]) {
 		printf("Usage: %s <file> [options]\n\n", argv[0]);
 		printf("Options:\n");
 		printf("-d - debug mode\n");
-		printf("-vr - view registers values\n");
+		printf("-vR - view registers values\n");
+		printf("-rd - create registers dump\n");
 		printf("-md - create memory dump\n");
 		return 0;
 	} else if (strcmp(argv[1], "-v") == 0 || strcmp(argv[1], "--version") == 0) {
@@ -124,6 +140,7 @@ int main(int argc, char* argv[]) {
 
 	bool REGISTERS_VIEW = false;
 	bool MEMORY_DUMP = false;
+	bool REGISTERS_DUMP = false;
 
 	if (argc > 2) {
 		for (int i = 2; i < argc; i++) {
@@ -131,6 +148,8 @@ int main(int argc, char* argv[]) {
 				DEBUG = true;
 			} else if (strcmp(argv[i], "-vr") == 0 || strcmp(argv[i], "--view-registers") == 0) {
 				REGISTERS_VIEW = true;
+			} else if (strcmp(argv[i], "-rd") == 0 || strcmp(argv[i], "--registers-dump") == 0) {
+				REGISTERS_DUMP = true;
 			} else if (strcmp(argv[i], "-md") == 0 || strcmp(argv[i], "--memory-dump") == 0) {
 				MEMORY_DUMP = true;
 			}
@@ -150,7 +169,7 @@ int main(int argc, char* argv[]) {
 	size_t file_length = ftell(fp);
 	fseek(fp, 0, SEEK_SET);
 
-	load(memory, fp, file_length);
+	read(memory, fp, file_length);
 
 	fclose(fp);
 
@@ -632,6 +651,10 @@ int main(int argc, char* argv[]) {
 
 	if (DEBUG) {
 		printf("CPU halted\n");
+	}
+
+	if (REGISTERS_DUMP) {
+		registers_dump("registers.dump", &registers);
 	}
 
 	if (MEMORY_DUMP) {
