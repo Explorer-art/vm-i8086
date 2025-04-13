@@ -61,7 +61,7 @@ void read(uint8_t *memory, FILE *fp, size_t file_length) {
 	}
 }
 
-void registers_dump(const char* filename, Registers* regs) {
+void registers_dump(const char* filename) {
 	FILE* fp = fopen(filename, "w");
 
 	if (fp == NULL) {
@@ -69,14 +69,14 @@ void registers_dump(const char* filename, Registers* regs) {
 		exit(1);
 	}
 
-	fprintf(fp, "AL:0x%X\nBL:0x%X\nCL:0x%X\nDL:0x%X\n", regs->AX.low, regs->BX.low, regs->CX.low, regs->DX.low);
-	fprintf(fp, "AH:0x%X\nBH:0x%X\nCH:0x%X\nDH:0x%X\n", regs->AX.high, regs->BX.high, regs->CX.high, regs->DX.high);
-	fprintf(fp, "AX:0x%X\nBX:0x%X\nCX:0x%X\nDX:0x%X\n", regs->AX.base, regs->BX.base, regs->CX.base, regs->DX.base);
+	fprintf(fp, "AL:0x%X\nBL:0x%X\nCL:0x%X\nDL:0x%X\n", registers.AX.low, registers.BX.low, registers.CX.low, registers.DX.low);
+	fprintf(fp, "AH:0x%X\nBH:0x%X\nCH:0x%X\nDH:0x%X\n", registers.AX.high, registers.BX.high, registers.CX.high, registers.DX.high);
+	fprintf(fp, "AX:0x%X\nBX:0x%X\nCX:0x%X\nDX:0x%X\n", registers.AX.base, registers.BX.base, registers.CX.base, registers.DX.base);
 
 	fclose(fp);
 }
 
-void memory_dump(const char *filename, uint8_t *memory) {
+void memory_dump(const char *filename) {
 	FILE *fp = fopen(filename, "wb");
 
 	if (fp == NULL) {
@@ -94,8 +94,10 @@ void memory_dump(const char *filename, uint8_t *memory) {
 void mov8(uint8_t opcode) {
 	uint8_t index = opcode - AL_REG;
 
+	registers.IP++;
+
 	if (DEBUG) {
-		printf("%02X ", memory[++registers.IP]);
+		printf("%02X ", memory[registers.IP]);
 	}
 
 	if (DEBUG) {
@@ -108,8 +110,10 @@ void mov8(uint8_t opcode) {
 void mov16(uint8_t opcode) {
 	uint8_t index = opcode - AX_REG;
 
+	registers.IP++;
+
 	if (DEBUG) {
-		printf("%02X ", memory[++registers.IP]);
+		printf("%02X ", memory[registers.IP]);
 	}
 
 	if (DEBUG) {
@@ -187,8 +191,10 @@ int main(int argc, char* argv[]) {
 		switch (memory[registers.IP]) {
 			case MOV_8REG_REG: {
 				if (DEBUG) {
-					printf("%02X ", memory[registers.IP++]);
+					printf("%02X ", memory[registers.IP]);
 				}
+
+				registers.IP++;
 
 				uint8_t modrm = memory[registers.IP];
 				uint8_t reg1 = modrm & 0b111;
@@ -203,8 +209,10 @@ int main(int argc, char* argv[]) {
 			}
 			case MOV_16REG_REG: {
 				if (DEBUG) {
-					printf("%02X ", memory[registers.IP++]);
+					printf("%02X ", memory[registers.IP]);
 				}
+
+				registers.IP++;
 
 				uint8_t modrm = memory[registers.IP];
 				uint8_t reg1 = modrm & 0b111;
@@ -234,7 +242,7 @@ int main(int argc, char* argv[]) {
 				mov16(memory[registers.IP]);
 				break;
 			case ADD_8REG_REG: {
-				uint8_t modrm = memory[registers.IP++];
+				uint8_t modrm = memory[++registers.IP];
 				uint8_t reg1 = modrm & 0b111;
 				uint8_t reg2 = (modrm >> 3) & 0b111;
 
@@ -246,7 +254,7 @@ int main(int argc, char* argv[]) {
 				break;
 			}
 			case ADD_16REG_REG: {
-				uint8_t modrm = memory[registers.IP++];
+				uint8_t modrm = memory[++registers.IP];
 				uint8_t reg1 = modrm & 0b111;
 				uint8_t reg2 = (modrm >> 3) & 0b111;
 
@@ -258,7 +266,7 @@ int main(int argc, char* argv[]) {
 				break;
 			}
 			case SUB_8REG_REG: {
-				uint8_t modrm = memory[registers.IP++];
+				uint8_t modrm = memory[++registers.IP];
 				uint8_t reg1 = modrm & 0b111;
 				uint8_t reg2 = (modrm >> 3) & 0b111;
 
@@ -270,7 +278,7 @@ int main(int argc, char* argv[]) {
 				break;
 			}
 			case SUB_16REG_REG: {
-				uint8_t modrm = memory[registers.IP++];
+				uint8_t modrm = memory[++registers.IP];
 				uint8_t reg1 = modrm & 0b111;
 				uint8_t reg2 = (modrm >> 3) & 0b111;
 
@@ -282,34 +290,40 @@ int main(int argc, char* argv[]) {
 				break;
 			}
 			case ADD_AL_VALUE:
+				registers.IP++;
+
 				if (DEBUG) {
-					printf("add al, %X", memory[++registers.IP]);
+					printf("add al, %X", memory[registers.IP]);
 				}
+
 				registers.AX.low += memory[registers.IP];
 				break;
 			case ADD_8REG_VALUE: {
 				if ((memory[++registers.IP] - 0xC0) <= 7) {
 					uint8_t index = memory[registers.IP] - 0xC0; // 0xC0 - AL (8 bits)
+					registers.IP++;
 
 					if (DEBUG) {
-						printf("add %s, %X", reg8_names[index], memory[++registers.IP]);
+						printf("add %s, %X", reg8_names[index], memory[registers.IP]);
 					}
 
 					*pregs8[index] += memory[registers.IP];
 				} else {
 					if ((memory[registers.IP] - 0xC8) <= 7) {
 						uint8_t index = memory[registers.IP] - 0xC8; // 0xC8 - AL (8 bits)
+						registers.IP++;
 
 						if (DEBUG) {
-							printf("and %s, %X", reg8_names[index], memory[++registers.IP]);
+							printf("and %s, %X", reg8_names[index], memory[registers.IP]);
 						}
 
 						*pregs8[index] |= memory[registers.IP];
 					} else {
 						uint8_t index = memory[registers.IP] - 0xE0; // 0xE0 - AL (8 bits)
+						registers.IP++;
 
 						if (DEBUG) {
-							printf("and %s, %X", reg8_names[index], memory[++registers.IP]);
+							printf("and %s, %X", reg8_names[index], memory[registers.IP]);
 						}
 
 						*pregs8[index] &= memory[registers.IP];
@@ -320,26 +334,29 @@ int main(int argc, char* argv[]) {
 			case ADD_16REG_VALUE: {
 				if ((memory[++registers.IP] - 0xC0) <= 7) {
 					uint8_t index = memory[registers.IP] - 0xC0; // 0xC0 - AX (16 bits)
+					registers.IP++;
 
 					if (DEBUG) {
-						printf("add %s, %X", reg16_names[index], memory[++registers.IP]);
+						printf("add %s, %X", reg16_names[index], memory[registers.IP]);
 					}
 
 					*pregs16[index] += memory[registers.IP];
 				} else {
 					if ((memory[registers.IP] - 0xC8) <= 7) {
 						uint8_t index = memory[registers.IP] - 0xC8; // 0xC8 - AX (16 bits)
+						registers.IP++;
 
 						if (DEBUG) {
-							printf("or %s, %X", reg16_names[index], memory[++registers.IP]);
+							printf("or %s, %X", reg16_names[index], memory[registers.IP]);
 						}
 
 						*pregs16[index] |= memory[registers.IP];
 					} else {
 						uint8_t index = memory[registers.IP] - 0xE0; // 0xE0 - AX (16 bits)
+						registers.IP++;
 
 						if (DEBUG) {
-							printf("and %s, %X", reg16_names[index], memory[++registers.IP]);
+							printf("and %s, %X", reg16_names[index], memory[registers.IP]);
 						}
 
 						*pregs16[index] &= memory[registers.IP];
@@ -499,8 +516,10 @@ int main(int argc, char* argv[]) {
 				break;
 			}
 			case OR_AL_VALUE: {
+				registers.IP++;
+
 				if (DEBUG) {
-					printf("or ax, %X", memory[++registers.IP]);
+					printf("or ax, %X", memory[registers.IP]);
 				}
 
 				*pregs8[0] |= memory[registers.IP];
@@ -644,7 +663,9 @@ int main(int argc, char* argv[]) {
 			printf("\tAX = %04X\tBX = %04X\tCX = %04X\tDX = %04X", registers.AX.base, registers.BX.base, registers.CX.base, registers.DX.base);
 		}
 
-		printf("\n");
+		if (DEBUG) {
+			printf("\n");
+		}
 
 		registers.IP++;
 	}
@@ -654,11 +675,11 @@ int main(int argc, char* argv[]) {
 	}
 
 	if (REGISTERS_DUMP) {
-		registers_dump("registers.dump", &registers);
+		registers_dump("registers.dump");
 	}
 
 	if (MEMORY_DUMP) {
-		memory_dump("memory.dump", memory);
+		memory_dump("memory.dump");
 	}
 
 	free(memory);

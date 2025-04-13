@@ -1,4 +1,4 @@
 [bits 16]
 
-add al, al
+add al, bl
 hlt
