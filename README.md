@@ -14,6 +14,6 @@ make
 Options:
 -d - debug mode
 -vr - view registers values
--rd 0 create registers dump
+-rd - create registers dump
 -md - create memory dump
 ```
