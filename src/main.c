@@ -177,9 +177,9 @@ int main(int argc, char* argv[]) {
 
 	fclose(fp);
 
-	bool HLT = true;
+	bool running = true;
 
-	while (HLT) {
+	while (running) {
 		if (DEBUG) {
 			printf("0x%05X ", registers.IP);
 		}
@@ -412,23 +412,26 @@ int main(int argc, char* argv[]) {
 				}
 				registers.DX.base--;
 				break;
-			case INC_DEC:
-				uint8_t index = memory[++registers.IP] - 0xC0;
+			case INC_DEC_R8: {
+				if (memory[++registers.IP] - 0xC0 <= 7) {
+					uint8_t index = memory[registers.IP] - 0xC0;
 
-				if (index >= 0 && index <= 7) {
 					if (DEBUG) {
 						printf("inc %s", reg8_names[index]);
 					}
 
-					(*pregs8)++;
+					(*pregs8[index])++;
 				} else {
+					uint8_t index = memory[registers.IP] - 0xC8;
+
 					if (DEBUG) {
 						printf("dec %s", reg8_names[index]);
 					}
 
-					(*pregs8)--;
+					(*pregs8[index])--;
 				}
 				break;
+			}
 			case AND_8REG_REG: {
 				uint8_t modrm = memory[++registers.IP];
 				uint8_t reg1 = modrm & 0b111;
@@ -650,7 +653,7 @@ int main(int argc, char* argv[]) {
 					printf("hlt");
 				}
 
-				HLT = false;
+				running = false;
 				break;
 			default:
 				if (DEBUG) {
