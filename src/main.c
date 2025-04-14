@@ -6,7 +6,7 @@
 #include <string.h>
 #include <i8086.h>
 
-#define VERSION			"0.1.4"
+#define VERSION			"0.1.5"
 #define BUFFER_SIZE		1024
 #define MEMORY_SIZE 	1048576
 
@@ -21,10 +21,14 @@ License: MIT
 CHANGELOG:
 v0.1.3
 - Added AND opcode
-- Code optimization
+- Code refactoring
 
 v0.1.4
 - Added OR, NOT, XOR opcodes
+
+v0.1.5
+- Fixed bug in ADD, SUB AND and OR
+- Code refactoring
 
 */
 
