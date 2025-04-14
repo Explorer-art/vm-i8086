@@ -63,6 +63,7 @@ typedef struct {
 #define ADD_8REG_VALUE 0x80
 #define ADD_16REG_VALUE 0x83
 #define ADD_AL_VALUE 0x04
+#define ADD_AX_VALUE 0x05
 #define ADD_CL 0xC1
 #define ADD_DL 0xC2
 #define ADD_BL 0xC3
@@ -76,7 +77,9 @@ typedef struct {
 #define ADD_BX 0xC3
 #define SUB_8REG_REG 0x28
 #define SUB_16REG_REG 0x29
-#define INC_DEC 0xFE
+#define SUB_AL_VALUE 0x2C
+#define SUB_AX_VALUE 0x2D
+#define INC_DEC_R8 0xFE
 #define INC_AX 0x40
 #define INC_CX 0x41
 #define INC_DX 0x42

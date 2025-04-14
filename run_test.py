@@ -1,6 +1,10 @@
 import os
 import sys
 
+RED = "\033[31m"
+GREEN = "\033[32m"
+RESET = "\033[0m"
+
 TESTS_DIRECTORY = "tests"
 REGISTERS_DUMP_FILE = "registers.dump"
 
@@ -79,6 +83,52 @@ tests = {
 		"AL": 19,  "BL": 12, "CL": 19, "DL": 12,
 		"AH": 0,   "BH": 0,  "CH": 0,  "DH": 0,
 		"AX": 19,  "BX": 12, "CX": 19, "DX": 12
+	},
+	"and_low.bin": {
+		"AL": 0b10100000, "BL": 0, "CL": 0b10100000, "DL": 0,
+		"AH": 0, "BH": 0, "CH": 0, "DH": 0,
+		"AX": 0b10100000, "BX": 0, "CX": 0b10100000, "DX": 0
+	},
+	"and_high.bin": {
+		"AL": 0, "BL": 0, "CL": 0, "DL": 0,
+		"AH": 0b10001000, "BH": 0, "CH": 0b10001000, "DH": 0,
+		"AX": 0b10001000 << 8, "BX": 0, "CX": 0b10001000 << 8, "DX": 0
+	},
+	"and_base.bin": {
+		"AL": 0xFF, "BL": 0, "CL": 0xFF, "DL": 0,
+		"AH": 0, "BH": 0, "CH": 0, "DH": 0,
+		"AX": 0x00FF, "BX": 0, "CX": 0x00FF, "DX": 0
+	},
+	"or_low.bin": {
+		"AL": 0xFF, "BL": 0, "CL": 0xFF, "DL": 0,
+		"AH": 0, "BH": 0, "CH": 0, "DH": 0,
+		"AX": 0xFF, "BX": 0, "CX": 0xFF, "DX": 0
+	},
+	"or_high.bin": {
+		"AL": 0, "BL": 0, "CL": 0, "DL": 0,
+		"AH": 0x0F, "BH": 0, "CH": 0x0F, "DH": 0,
+		"AX": 0x0F << 8, "BX": 0, "CX": 0x0F << 8, "DX": 0
+	},
+	"or_base.bin": {
+		"AL": 0xFF, "BL": 0, "CL": 0xFF, "DL": 0,
+		"AH": 0xFF, "BH": 0, "CH": 0xFF, "DH": 0,
+		"AX": 0xFFFF, "BX": 0, "CX": 0xFFFF, "DX": 0
+	},
+
+	"not_low.bin": {
+		"AL": 0x0F, "BL": 0, "CL": 0x0F, "DL": 0,
+		"AH": 0, "BH": 0, "CH": 0, "DH": 0,
+		"AX": 0x0F, "BX": 0, "CX": 0x0F, "DX": 0
+	},
+	"not_high.bin": {
+		"AL": 0, "BL": 0, "CL": 0, "DL": 0,
+		"AH": 0x55, "BH": 0, "CH": 0x55, "DH": 0,
+		"AX": 0x55 << 8, "BX": 0, "CX": 0x55 << 8, "DX": 0
+	},
+	"not_base.bin": {
+		"AL": 0xF0, "BL": 0, "CL": 0xF0, "DL": 0,
+		"AH": 0xF0, "BH": 0, "CH": 0xF0, "DH": 0,
+		"AX": 0xF0F0, "BX": 0, "CX": 0xF0F0, "DX": 0
 	}
 }
 
@@ -110,9 +160,9 @@ def run_test():
 		if registers != tests[test]:
 			for key in tests[test]:
 				if tests[test][key] != registers.get(key):
-					print(f"[FAIL] {test}: expected {key}={tests[test][key]}, got {key}={registers.get(key)}")
+					print(f"{RED}[FAIL]{RESET} {test}: expected {key}={hex(tests[test][key])}, got {key}={hex(registers.get(key))}")
 		else:
-			print(f"[PASS] {test}")
+			print(f"{GREEN}[PASS]{RESET} {test}")
 
 if __name__ == "__main__":
 	run_test()

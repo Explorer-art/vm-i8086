@@ -298,6 +298,15 @@ int main(int argc, char* argv[]) {
 
 				registers.AX.low += memory[registers.IP];
 				break;
+			case ADD_AX_VALUE:
+				uint16_t value = memory[++registers.IP] | (memory[++registers.IP] << 8);
+
+				if (DEBUG) {
+					printf("add ax, %X", value);
+				}
+
+				registers.AX.base += value;
+				break;
 			case ADD_8REG_VALUE: {
 				if ((memory[++registers.IP] - 0xC0) <= 7) {
 					uint8_t index = memory[registers.IP] - 0xC0; // 0xC0 - AL (8 bits)
@@ -310,7 +319,7 @@ int main(int argc, char* argv[]) {
 					*pregs8[index] += memory[registers.IP];
 				} else {
 					if ((memory[registers.IP] - 0xC8) <= 7) {
-						uint8_t index = memory[registers.IP] - 0xC8; // 0xC8 - AL (8 bits)
+						uint8_t index = memory[registers.IP] - 0xC8;
 						registers.IP++;
 
 						if (DEBUG) {
@@ -319,14 +328,23 @@ int main(int argc, char* argv[]) {
 
 						*pregs8[index] |= memory[registers.IP];
 					} else {
-						uint8_t index = memory[registers.IP] - 0xE0; // 0xE0 - AL (8 bits)
-						registers.IP++;
+						if ((memory[registers.IP] - 0xE0) <= 7) {
+							uint8_t index = memory[registers.IP++] - 0xE0;
 
-						if (DEBUG) {
-							printf("and %s, %X", reg8_names[index], memory[registers.IP]);
+							if (DEBUG) {
+								printf("and %s, %X", reg8_names[index], memory[registers.IP]);
+							}
+
+							*pregs8[index] &= memory[registers.IP];
+						} else {
+							uint8_t index = memory[registers.IP++] - 0xE8;
+
+							if (DEBUG) {
+								printf("sub %s, %X", reg8_names[index], memory[registers.IP]);
+							}
+
+							*pregs8[index] -= memory[registers.IP];
 						}
-
-						*pregs8[index] &= memory[registers.IP];
 					}
 				}
 				break;
@@ -334,34 +352,56 @@ int main(int argc, char* argv[]) {
 			case ADD_16REG_VALUE: {
 				if ((memory[++registers.IP] - 0xC0) <= 7) {
 					uint8_t index = memory[registers.IP] - 0xC0; // 0xC0 - AX (16 bits)
-					registers.IP++;
+					uint16_t value = memory[++registers.IP] | (0xFF << 8); // 0xE0 - AX only if value => 0xFF80 (16 bits)
 
 					if (DEBUG) {
-						printf("add %s, %X", reg16_names[index], memory[registers.IP]);
+						printf("add %s, %X", reg16_names[index], value);
 					}
 
-					*pregs16[index] += memory[registers.IP];
+					*pregs16[index] += value;
 				} else {
+					// OR AX, R/M => 0xFF80
 					if ((memory[registers.IP] - 0xC8) <= 7) {
 						uint8_t index = memory[registers.IP] - 0xC8; // 0xC8 - AX (16 bits)
-						registers.IP++;
+						uint16_t value = memory[++registers.IP] | (0xFF << 8);
 
 						if (DEBUG) {
-							printf("or %s, %X", reg16_names[index], memory[registers.IP]);
+							printf("or %s, %X", reg16_names[index], value);
 						}
 
-						*pregs16[index] |= memory[registers.IP];
+						*pregs16[index] |= value;
 					} else {
-						uint8_t index = memory[registers.IP] - 0xE0; // 0xE0 - AX (16 bits)
-						registers.IP++;
+						// AND AX, R/M => 0xFF80
+						uint8_t index = memory[registers.IP] - 0xE0;
+						uint16_t value = memory[++registers.IP] | (0xFF << 8);
 
 						if (DEBUG) {
-							printf("and %s, %X", reg16_names[index], memory[registers.IP]);
+							printf("and %s, %X", reg16_names[index], value);
 						}
 
-						*pregs16[index] &= memory[registers.IP];
+						*pregs16[index] &= value;
 					}
 				}
+				break;
+			}
+			case SUB_AL_VALUE: {
+				uint16_t value = memory[++registers.IP];
+
+				if (DEBUG) {
+					printf("sub al, %X", value);
+				}
+
+				registers.AX.low -= value;
+				break;
+			}
+			case SUB_AX_VALUE: {
+				uint16_t value = memory[++registers.IP] | (memory[++registers.IP] << 8);
+
+				if (DEBUG) {
+					printf("sub ax, %X", value);
+				}
+
+				registers.AX.base -= value;
 				break;
 			}
 			case INC_AX:
@@ -457,13 +497,14 @@ int main(int argc, char* argv[]) {
 				break;
 			}
 			case AND_AL_VALUE:
+				registers.IP++;
 				if (DEBUG) {
-					printf("and al, %X", memory[++registers.IP]);
+					printf("and al, %X", memory[registers.IP]);
 				}
 				registers.AX.low &= memory[registers.IP];
 				break;
 			case AND_AX_VALUE: {
-				uint16_t value = memory[++registers.IP] * memory[++registers.IP] + memory[registers.IP - 1];
+				uint16_t value = memory[++registers.IP] | (memory[++registers.IP] << 8);
 
 				if (DEBUG) {
 					printf("and ax, %X", value);
@@ -473,9 +514,9 @@ int main(int argc, char* argv[]) {
 				break;
 			}
 			case AND_16REG_VALUE: {
-				if (memory[++registers.IP] - 0xC8 <= 7) {
-					uint8_t index = memory[registers.IP] - 0xC8;
-					uint16_t value = memory[++registers.IP] * memory[++registers.IP] + memory[registers.IP - 1];
+				if ((memory[++registers.IP] - 0xC0) <= 7) {
+					uint8_t index = memory[registers.IP] - 0xC0; // 0xC0 - AX (16 bits)
+					uint16_t value = memory[++registers.IP] | (memory[++registers.IP] << 8);
 
 					if (DEBUG) {
 						printf("or %s, %X", reg16_names[index], value);
@@ -483,14 +524,25 @@ int main(int argc, char* argv[]) {
 
 					*pregs16[index] |= value;
 				} else {
-					uint8_t index = memory[registers.IP] - 0xE0;
-					uint16_t value = memory[++registers.IP] * memory[++registers.IP] + memory[registers.IP - 1];
+					if ((memory[registers.IP] - 0xE0) <= 7) {
+						uint8_t index = memory[registers.IP] - 0xE0;
+						uint16_t value = memory[++registers.IP] | (memory[++registers.IP] << 8);
 
-					if (DEBUG) {
-						printf("and %s, %X", reg16_names[index], value);
+						if (DEBUG) {
+							printf("and %s, %X", reg16_names[index], value);
+						}
+
+						*pregs16[index] &= value;
+					} else {
+						uint8_t index = memory[registers.IP] - 0xE8;
+						uint16_t value = memory[++registers.IP] | (memory[++registers.IP] << 8);
+
+						if (DEBUG) {
+							printf("sub %s, %X", reg16_names[index], value);
+						}
+
+						*pregs16[index] -= value;
 					}
-
-					*pregs16[index] &= value;
 				}
 				break;
 			}
@@ -529,7 +581,7 @@ int main(int argc, char* argv[]) {
 				break;
 			}
 			case OR_AX_VALUE: {
-				uint16_t value = (memory[++registers.IP] * memory[++registers.IP]) + memory[registers.IP - 1];
+				uint16_t value = memory[++registers.IP] | (memory[++registers.IP] << 8);
 
 				if (DEBUG) {
 					printf("or ax, %X", value);

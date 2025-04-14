@@ -1,3 +1,5 @@
 [bits 16]
 
-dec al
+mov ax, 5
+
+hlt
