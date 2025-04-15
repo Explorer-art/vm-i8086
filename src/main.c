@@ -4,14 +4,13 @@
 #include <stdbool.h>
 #include <memory.h>
 #include <string.h>
-#include <i8086.h>
+#include <cpu.h>
+#include <utils.h>
 
 #define VERSION			"0.1.5"
-#define BUFFER_SIZE		1024
-#define MEMORY_SIZE 	1048576
 
 /*
-
+--------------------------------------------------
 VM i8086
 Virtual Machine based on Intel 8086 processor
 
@@ -29,16 +28,20 @@ v0.1.4
 v0.1.5
 - Fixed bug in ADD, SUB AND and OR
 - Code refactoring
-
+--------------------------------------------------
 */
 
 bool DEBUG = false;
 Registers registers = {0};
-uint8_t *memory;
+uint8_t *mem;
 
-uint8_t *pregs8[8] = {
-	&registers.AX.low, &registers.CX.low, &registers.DX.low, &registers.BX.low,
-	&registers.AX.high, &registers.CX.high, &registers.DX.high, &registers.BX.high
+uint8_t *regs8[8] = {
+	&registers.ax.low, &registers.cx.low, &registers.dx.low, &registers.bx.low,
+	&registers.ax.high, &registers.cx.high, &registers.dx.high, &registers.bx.high
+};
+
+uint16_t *regs16[4] = {
+	&registers.ax.base, &registers.cx.base, &registers.dx.base, &registers.bx.base
 };
 
 char *reg8_names[8] = {
@@ -46,85 +49,40 @@ char *reg8_names[8] = {
 	"ah", "ch", "dh", "bh"
 };
 
-uint16_t *pregs16[4] = {
-	&registers.AX.base, &registers.CX.base, &registers.DX.base, &registers.BX.base
-};
-
 char *reg16_names[4] = {
 	"ax", "cx", "dx", "bx"
 };
 
-void read(uint8_t *memory, FILE *fp, size_t file_length) {
-	uint8_t buffer[BUFFER_SIZE];
-	uint8_t *memory_ptr = memory;
-	int bytes_read;
+void mov_imm8(uint8_t opcode) {
+	uint8_t index = opcode - 0xB0;	// 0xB0 - AL
 
-	while ((bytes_read = fread(buffer, 1, sizeof(buffer), fp)) > 0) {
-		memcpy(memory_ptr, buffer, bytes_read);
-		memory_ptr += bytes_read;
-	}
-}
-
-void registers_dump(const char* filename) {
-	FILE* fp = fopen(filename, "w");
-
-	if (fp == NULL) {
-		printf("Erorr opening file %s\n", filename);
-		exit(1);
-	}
-
-	fprintf(fp, "AL:0x%X\nBL:0x%X\nCL:0x%X\nDL:0x%X\n", registers.AX.low, registers.BX.low, registers.CX.low, registers.DX.low);
-	fprintf(fp, "AH:0x%X\nBH:0x%X\nCH:0x%X\nDH:0x%X\n", registers.AX.high, registers.BX.high, registers.CX.high, registers.DX.high);
-	fprintf(fp, "AX:0x%X\nBX:0x%X\nCX:0x%X\nDX:0x%X\n", registers.AX.base, registers.BX.base, registers.CX.base, registers.DX.base);
-
-	fclose(fp);
-}
-
-void memory_dump(const char *filename) {
-	FILE *fp = fopen(filename, "wb");
-
-	if (fp == NULL) {
-		printf("Error opening file %s\n", filename);
-		exit(1);
-	}
-
-	fwrite(memory, 1, MEMORY_SIZE, fp);
-
-	fclose(fp);
-
-	printf("Memory dumped!\n");
-}
-
-void mov8(uint8_t opcode) {
-	uint8_t index = opcode - AL_REG;
-
-	registers.IP++;
+	registers.ip++;
 
 	if (DEBUG) {
-		printf("%02X ", memory[registers.IP]);
+		printf("%02X ", mem[registers.ip]);
 	}
 
 	if (DEBUG) {
-		printf("mov %s, %X", reg8_names[index], memory[registers.IP]);
+		printf("mov %s, %X", reg8_names[index], mem[registers.ip]);
 	}
 
-	*pregs8[index] = memory[registers.IP];
+	*regs8[index] = mem[registers.ip];
 }
 
-void mov16(uint8_t opcode) {
+void mov_imm16(uint8_t opcode) {
 	uint8_t index = opcode - AX_REG;
 
-	registers.IP++;
+	registers.ip++;
 
 	if (DEBUG) {
-		printf("%02X ", memory[registers.IP]);
+		printf("%02X ", mem[registers.ip]);
 	}
 
 	if (DEBUG) {
-		printf("mov %s, %X", reg16_names[index], memory[registers.IP] | (memory[registers.IP + 1] << 8));
+		printf("mov %s, %X", reg16_names[index], mem[registers.ip] | (mem[registers.ip + 1] << 8));
 	}
 
-	*pregs16[index] = memory[registers.IP] | (memory[++registers.IP] << 8);
+	*regs16[index] = mem[registers.ip] | (mem[++registers.ip] << 8);
 }
 
 int main(int argc, char* argv[]) {
@@ -164,7 +122,7 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-	memory = malloc(MEMORY_SIZE);
+	mem = malloc(MEMORY_SIZE);
 
 	FILE *fp = fopen(argv[1], "rb");
 
@@ -177,7 +135,7 @@ int main(int argc, char* argv[]) {
 	size_t file_length = ftell(fp);
 	fseek(fp, 0, SEEK_SET);
 
-	read(memory, fp, file_length);
+	read(mem, fp, file_length);
 
 	fclose(fp);
 
@@ -185,22 +143,22 @@ int main(int argc, char* argv[]) {
 
 	while (running) {
 		if (DEBUG) {
-			printf("0x%05X ", registers.IP);
+			printf("0x%05X ", registers.ip);
 		}
 
 		if (DEBUG) {
-			printf("%02X ", memory[registers.IP]);
+			printf("%02X ", mem[registers.ip]);
 		}
 
-		switch (memory[registers.IP]) {
+		switch (mem[registers.ip]) {
 			case MOV_8REG_REG: {
 				if (DEBUG) {
-					printf("%02X ", memory[registers.IP]);
+					printf("%02X ", mem[registers.ip]);
 				}
 
-				registers.IP++;
+				registers.ip++;
 
-				uint8_t modrm = memory[registers.IP];
+				uint8_t modrm = mem[registers.ip];
 				uint8_t reg1 = modrm & 0b111;
 				uint8_t reg2 = (modrm >> 3) & 0b111;
 
@@ -208,17 +166,17 @@ int main(int argc, char* argv[]) {
 					printf("mov %s, %s", reg8_names[reg1], reg8_names[reg2]);
 				}
 
-				*pregs8[reg1] = *pregs8[reg2];
+				*regs8[reg1] = *regs8[reg2];
 				break;
 			}
 			case MOV_16REG_REG: {
 				if (DEBUG) {
-					printf("%02X ", memory[registers.IP]);
+					printf("%02X ", mem[registers.ip]);
 				}
 
-				registers.IP++;
+				registers.ip++;
 
-				uint8_t modrm = memory[registers.IP];
+				uint8_t modrm = mem[registers.ip];
 				uint8_t reg1 = modrm & 0b111;
 				uint8_t reg2 = (modrm >> 3) & 0b111;
 
@@ -226,7 +184,7 @@ int main(int argc, char* argv[]) {
 					printf("mov %s, %s", reg16_names[reg1], reg16_names[reg2]);
 				}
 
-				*pregs16[reg1] = *pregs16[reg2];
+				*regs16[reg1] = *regs16[reg2];
 				break;
 			}
 			case AL_REG:
@@ -237,16 +195,16 @@ int main(int argc, char* argv[]) {
 			case BH_REG:
 			case CH_REG:
 			case DH_REG:
-				mov8(memory[registers.IP]);
+				mov_imm8(mem[registers.ip]);
 				break;
 			case AX_REG:
 			case BX_REG:
 			case CX_REG:
 			case DX_REG:
-				mov16(memory[registers.IP]);
+				mov_imm16(mem[registers.ip]);
 				break;
 			case ADD_8REG_REG: {
-				uint8_t modrm = memory[++registers.IP];
+				uint8_t modrm = mem[++registers.ip];
 				uint8_t reg1 = modrm & 0b111;
 				uint8_t reg2 = (modrm >> 3) & 0b111;
 
@@ -254,11 +212,11 @@ int main(int argc, char* argv[]) {
 					printf("add %s, %s", reg8_names[reg1], reg8_names[reg2]);
 				}
 
-				*pregs8[reg1] += *pregs8[reg2];
+				*regs8[reg1] += *regs8[reg2];
 				break;
 			}
 			case ADD_16REG_REG: {
-				uint8_t modrm = memory[++registers.IP];
+				uint8_t modrm = mem[++registers.ip];
 				uint8_t reg1 = modrm & 0b111;
 				uint8_t reg2 = (modrm >> 3) & 0b111;
 
@@ -266,11 +224,11 @@ int main(int argc, char* argv[]) {
 					printf("add %s, %s", reg16_names[reg1], reg16_names[reg2]);
 				}
 
-				*pregs16[reg1] += *pregs16[reg2];
+				*regs16[reg1] += *regs16[reg2];
 				break;
 			}
 			case SUB_8REG_REG: {
-				uint8_t modrm = memory[++registers.IP];
+				uint8_t modrm = mem[++registers.ip];
 				uint8_t reg1 = modrm & 0b111;
 				uint8_t reg2 = (modrm >> 3) & 0b111;
 
@@ -278,11 +236,11 @@ int main(int argc, char* argv[]) {
 					printf("sub %s, %s", reg8_names[reg1], reg8_names[reg2]);
 				}
 
-				*pregs8[reg1] -= *pregs8[reg2];
+				*regs8[reg1] -= *regs8[reg2];
 				break;
 			}
 			case SUB_16REG_REG: {
-				uint8_t modrm = memory[++registers.IP];
+				uint8_t modrm = mem[++registers.ip];
 				uint8_t reg1 = modrm & 0b111;
 				uint8_t reg2 = (modrm >> 3) & 0b111;
 
@@ -290,194 +248,194 @@ int main(int argc, char* argv[]) {
 					printf("sub %s, %s", reg16_names[reg1], reg16_names[reg2]);
 				}
 
-				*pregs16[reg1] -= *pregs16[reg2];
+				*regs16[reg1] -= *regs16[reg2];
 				break;
 			}
 			case ADD_AL_VALUE:
-				registers.IP++;
+				registers.ip++;
 
 				if (DEBUG) {
-					printf("add al, %X", memory[registers.IP]);
+					printf("add al, %X", mem[registers.ip]);
 				}
 
-				registers.AX.low += memory[registers.IP];
+				registers.ax.low += mem[registers.ip];
 				break;
 			case ADD_AX_VALUE:
-				uint16_t value = memory[++registers.IP] | (memory[++registers.IP] << 8);
+				uint16_t value = mem[++registers.ip] | (mem[++registers.ip] << 8);
 
 				if (DEBUG) {
 					printf("add ax, %X", value);
 				}
 
-				registers.AX.base += value;
+				registers.ax.base += value;
 				break;
-			case ADD_8REG_VALUE: {
-				if ((memory[++registers.IP] - 0xC0) <= 7) {
-					uint8_t index = memory[registers.IP] - 0xC0; // 0xC0 - AL (8 bits)
-					registers.IP++;
+			case 0x80: {
+				if ((mem[++registers.ip] - 0xC0) <= 7) {
+					uint8_t index = mem[registers.ip] - 0xC0; // 0xC0 - AL (8 bits)
+					registers.ip++;
 
 					if (DEBUG) {
-						printf("add %s, %X", reg8_names[index], memory[registers.IP]);
+						printf("add %s, %X", reg8_names[index], mem[registers.ip]);
 					}
 
-					*pregs8[index] += memory[registers.IP];
+					*regs8[index] += mem[registers.ip];
 				} else {
-					if ((memory[registers.IP] - 0xC8) <= 7) {
-						uint8_t index = memory[registers.IP] - 0xC8;
-						registers.IP++;
+					if ((mem[registers.ip] - 0xC8) <= 7) {
+						uint8_t index = mem[registers.ip] - 0xC8;
+						registers.ip++;
 
 						if (DEBUG) {
-							printf("and %s, %X", reg8_names[index], memory[registers.IP]);
+							printf("and %s, %X", reg8_names[index], mem[registers.ip]);
 						}
 
-						*pregs8[index] |= memory[registers.IP];
+						*regs8[index] |= mem[registers.ip];
 					} else {
-						if ((memory[registers.IP] - 0xE0) <= 7) {
-							uint8_t index = memory[registers.IP++] - 0xE0;
+						if ((mem[registers.ip] - 0xE0) <= 7) {
+							uint8_t index = mem[registers.ip++] - 0xE0;
 
 							if (DEBUG) {
-								printf("and %s, %X", reg8_names[index], memory[registers.IP]);
+								printf("and %s, %X", reg8_names[index], mem[registers.ip]);
 							}
 
-							*pregs8[index] &= memory[registers.IP];
+							*regs8[index] &= mem[registers.ip];
 						} else {
-							uint8_t index = memory[registers.IP++] - 0xE8;
+							uint8_t index = mem[registers.ip++] - 0xE8;
 
 							if (DEBUG) {
-								printf("sub %s, %X", reg8_names[index], memory[registers.IP]);
+								printf("sub %s, %X", reg8_names[index], mem[registers.ip]);
 							}
 
-							*pregs8[index] -= memory[registers.IP];
+							*regs8[index] -= mem[registers.ip];
 						}
 					}
 				}
 				break;
 			}
-			case ADD_16REG_VALUE: {
-				if ((memory[++registers.IP] - 0xC0) <= 7) {
-					uint8_t index = memory[registers.IP] - 0xC0; // 0xC0 - AX (16 bits)
-					uint16_t value = memory[++registers.IP] | (0xFF << 8); // 0xE0 - AX only if value => 0xFF80 (16 bits)
+			case 0x83: {
+				if ((mem[++registers.ip] - 0xC0) <= 7) {
+					uint8_t index = mem[registers.ip] - 0xC0; // 0xC0 - AX (16 bits)
+					uint16_t value = mem[++registers.ip] | (0xFF << 8); // 0xE0 - AX only if value => 0xFF80 (16 bits)
 
 					if (DEBUG) {
 						printf("add %s, %X", reg16_names[index], value);
 					}
 
-					*pregs16[index] += value;
+					*regs16[index] += value;
 				} else {
 					// OR AX, R/M => 0xFF80
-					if ((memory[registers.IP] - 0xC8) <= 7) {
-						uint8_t index = memory[registers.IP] - 0xC8; // 0xC8 - AX (16 bits)
-						uint16_t value = memory[++registers.IP] | (0xFF << 8);
+					if ((mem[registers.ip] - 0xC8) <= 7) {
+						uint8_t index = mem[registers.ip] - 0xC8; // 0xC8 - AX (16 bits)
+						uint16_t value = mem[++registers.ip] | (0xFF << 8);
 
 						if (DEBUG) {
 							printf("or %s, %X", reg16_names[index], value);
 						}
 
-						*pregs16[index] |= value;
+						*regs16[index] |= value;
 					} else {
 						// AND AX, R/M => 0xFF80
-						uint8_t index = memory[registers.IP] - 0xE0;
-						uint16_t value = memory[++registers.IP] | (0xFF << 8);
+						uint8_t index = mem[registers.ip] - 0xE0;
+						uint16_t value = mem[++registers.ip] | (0xFF << 8);
 
 						if (DEBUG) {
 							printf("and %s, %X", reg16_names[index], value);
 						}
 
-						*pregs16[index] &= value;
+						*regs16[index] &= value;
 					}
 				}
 				break;
 			}
 			case SUB_AL_VALUE: {
-				uint16_t value = memory[++registers.IP];
+				uint16_t value = mem[++registers.ip];
 
 				if (DEBUG) {
 					printf("sub al, %X", value);
 				}
 
-				registers.AX.low -= value;
+				registers.ax.low -= value;
 				break;
 			}
 			case SUB_AX_VALUE: {
-				uint16_t value = memory[++registers.IP] | (memory[++registers.IP] << 8);
+				uint16_t value = mem[++registers.ip] | (mem[++registers.ip] << 8);
 
 				if (DEBUG) {
 					printf("sub ax, %X", value);
 				}
 
-				registers.AX.base -= value;
+				registers.ax.base -= value;
 				break;
 			}
 			case INC_AX:
 				if (DEBUG) {
 					printf("inc ax");
 				}
-				registers.AX.base++;
+				registers.ax.base++;
 				break;
 			case INC_BX:
 				if (DEBUG) {
 					printf("inc bx");
 				}
-				registers.BX.base++;
+				registers.bx.base++;
 				break;
 			case INC_CX:
 				if (DEBUG) {
 					printf("inc cx");
 				}
-				registers.CX.base++;
+				registers.cx.base++;
 				break;
 			case INC_DX:
 				if (DEBUG) {
 					printf("inc dx");
 				}
-				registers.DX.base++;
+				registers.dx.base++;
 				break;
 			case DEC_AX:
 				if (DEBUG) {
 					printf("dec ax");
 				}
-				registers.AX.base--;
+				registers.ax.base--;
 				break;
 			case DEC_BX:
 				if (DEBUG) {
 					printf("dec bx");
 				}
-				registers.BX.base--;
+				registers.bx.base--;
 				break;
 			case DEC_CX:
 				if (DEBUG) {
 					printf("dec cx");
 				}
-				registers.CX.base--;
+				registers.cx.base--;
 				break;
 			case DEC_DX:
 				if (DEBUG) {
 					printf("dec dx");
 				}
-				registers.DX.base--;
+				registers.dx.base--;
 				break;
 			case INC_DEC_R8: {
-				if (memory[++registers.IP] - 0xC0 <= 7) {
-					uint8_t index = memory[registers.IP] - 0xC0;
+				if (mem[++registers.ip] - 0xC0 <= 7) {
+					uint8_t index = mem[registers.ip] - 0xC0;
 
 					if (DEBUG) {
 						printf("inc %s", reg8_names[index]);
 					}
 
-					(*pregs8[index])++;
+					(*regs8[index])++;
 				} else {
-					uint8_t index = memory[registers.IP] - 0xC8;
+					uint8_t index = mem[registers.ip] - 0xC8;
 
 					if (DEBUG) {
 						printf("dec %s", reg8_names[index]);
 					}
 
-					(*pregs8[index])--;
+					(*regs8[index])--;
 				}
 				break;
 			}
 			case AND_8REG_REG: {
-				uint8_t modrm = memory[++registers.IP];
+				uint8_t modrm = mem[++registers.ip];
 				uint8_t reg1 = modrm & 0b111;
 				uint8_t reg2 = (modrm >> 3) & 0b111;
 
@@ -485,11 +443,11 @@ int main(int argc, char* argv[]) {
 					printf("and %s, %s", reg8_names[reg1], reg8_names[reg2]);
 				}
 
-				*pregs8[reg1] &= *pregs8[reg2];
+				*regs8[reg1] &= *regs8[reg2];
 				break;
 			}
 			case AND_16REG_REG: {
-				uint8_t modrm = memory[++registers.IP];
+				uint8_t modrm = mem[++registers.ip];
 				uint8_t reg1 = modrm & 0b111;
 				uint8_t reg2 = (modrm >> 3) & 0b111;
 
@@ -497,61 +455,61 @@ int main(int argc, char* argv[]) {
 					printf("and %s, %s", reg16_names[reg1], reg16_names[reg2]);
 				}
 
-				*pregs16[reg1] &= *pregs16[reg2];
+				*regs16[reg1] &= *regs16[reg2];
 				break;
 			}
 			case AND_AL_VALUE:
-				registers.IP++;
+				registers.ip++;
 				if (DEBUG) {
-					printf("and al, %X", memory[registers.IP]);
+					printf("and al, %X", mem[registers.ip]);
 				}
-				registers.AX.low &= memory[registers.IP];
+				registers.ax.low &= mem[registers.ip];
 				break;
 			case AND_AX_VALUE: {
-				uint16_t value = memory[++registers.IP] | (memory[++registers.IP] << 8);
+				uint16_t value = mem[++registers.ip] | (mem[++registers.ip] << 8);
 
 				if (DEBUG) {
 					printf("and ax, %X", value);
 				}
 
-				*pregs16[0] &= value;
+				*regs16[0] &= value;
 				break;
 			}
 			case AND_16REG_VALUE: {
-				if ((memory[++registers.IP] - 0xC0) <= 7) {
-					uint8_t index = memory[registers.IP] - 0xC0; // 0xC0 - AX (16 bits)
-					uint16_t value = memory[++registers.IP] | (memory[++registers.IP] << 8);
+				if ((mem[++registers.ip] - 0xC0) <= 7) {
+					uint8_t index = mem[registers.ip] - 0xC0; // 0xC0 - AX (16 bits)
+					uint16_t value = mem[++registers.ip] | (mem[++registers.ip] << 8);
 
 					if (DEBUG) {
 						printf("or %s, %X", reg16_names[index], value);
 					}
 
-					*pregs16[index] |= value;
+					*regs16[index] |= value;
 				} else {
-					if ((memory[registers.IP] - 0xE0) <= 7) {
-						uint8_t index = memory[registers.IP] - 0xE0;
-						uint16_t value = memory[++registers.IP] | (memory[++registers.IP] << 8);
+					if ((mem[registers.ip] - 0xE0) <= 7) {
+						uint8_t index = mem[registers.ip] - 0xE0;
+						uint16_t value = mem[++registers.ip] | (mem[++registers.ip] << 8);
 
 						if (DEBUG) {
 							printf("and %s, %X", reg16_names[index], value);
 						}
 
-						*pregs16[index] &= value;
+						*regs16[index] &= value;
 					} else {
-						uint8_t index = memory[registers.IP] - 0xE8;
-						uint16_t value = memory[++registers.IP] | (memory[++registers.IP] << 8);
+						uint8_t index = mem[registers.ip] - 0xE8;
+						uint16_t value = mem[++registers.ip] | (mem[++registers.ip] << 8);
 
 						if (DEBUG) {
 							printf("sub %s, %X", reg16_names[index], value);
 						}
 
-						*pregs16[index] -= value;
+						*regs16[index] -= value;
 					}
 				}
 				break;
 			}
 			case OR_8REG_REG: {
-				uint8_t modrm = memory[++registers.IP];
+				uint8_t modrm = mem[++registers.ip];
 				uint8_t reg1 = modrm & 0b111;
 				uint8_t reg2 = (modrm >> 3) & 0b111;
 
@@ -559,11 +517,11 @@ int main(int argc, char* argv[]) {
 					printf("or %s, %s", reg8_names[reg1], reg8_names[reg2]);
 				}
 
-				*pregs8[reg1] |= *pregs8[reg2];
+				*regs8[reg1] |= *regs8[reg2];
 				break;
 			}
 			case OR_16REG_REG: {
-				uint8_t modrm = memory[++registers.IP];
+				uint8_t modrm = mem[++registers.ip];
 				uint8_t reg1 = modrm & 0b111;
 				uint8_t reg2 = (modrm >> 3) & 0b111;
 
@@ -571,112 +529,112 @@ int main(int argc, char* argv[]) {
 					printf("or %s, %s", reg16_names[reg1], reg16_names[reg2]);
 				}
 
-				*pregs16[reg1] |= *pregs16[reg2];
+				*regs16[reg1] |= *regs16[reg2];
 				break;
 			}
 			case OR_AL_VALUE: {
-				registers.IP++;
+				registers.ip++;
 
 				if (DEBUG) {
-					printf("or ax, %X", memory[registers.IP]);
+					printf("or ax, %X", mem[registers.ip]);
 				}
 
-				*pregs8[0] |= memory[registers.IP];
+				*regs8[0] |= mem[registers.ip];
 				break;
 			}
 			case OR_AX_VALUE: {
-				uint16_t value = memory[++registers.IP] | (memory[++registers.IP] << 8);
+				uint16_t value = mem[++registers.ip] | (mem[++registers.ip] << 8);
 
 				if (DEBUG) {
 					printf("or ax, %X", value);
 				}
 
-				*pregs16[0] |= value;
+				*regs16[0] |= value;
 				break;
 			}
 			case NOT_8REG: {
-				switch (memory[++registers.IP]) {
+				switch (mem[++registers.ip]) {
 					case NOT_AL:
 						if (DEBUG) {
 							printf("not al");
 						}
-						registers.AX.low = ~registers.AX.low;
+						registers.ax.low = ~registers.ax.low;
 						break;
 					case NOT_BL:
 						if (DEBUG) {
 							printf("not bl");
 						}
-						registers.BX.low = ~registers.BX.low;
+						registers.bx.low = ~registers.bx.low;
 						break;
 					case NOT_CL:
 						if (DEBUG) {
 							printf("not cl");
 						}
-						registers.CX.low = ~registers.CX.low;
+						registers.cx.low = ~registers.cx.low;
 						break;
 					case NOT_DL:
 						if (DEBUG) {
 							printf("not dl");
 						}
-						registers.DX.low = ~registers.DX.low;
+						registers.dx.low = ~registers.dx.low;
 						break;
 					case NOT_AH:
 						if (DEBUG) {
 							printf("not ah");
 						}
-						registers.AX.high = ~registers.AX.high;
+						registers.ax.high = ~registers.ax.high;
 						break;
 					case NOT_BH:
 						if (DEBUG) {
 							printf("not bh");
 						}
-						registers.BX.high = ~registers.BX.high;
+						registers.bx.high = ~registers.bx.high;
 						break;
 					case NOT_CH:
 						if (DEBUG) {
 							printf("not ch");
 						}
-						registers.CX.high = ~registers.CX.high;
+						registers.cx.high = ~registers.cx.high;
 						break;
 					case NOT_DH:
 						if (DEBUG) {
 							printf("not dh");
 						}
-						registers.DX.high = ~registers.DX.high;
+						registers.dx.high = ~registers.dx.high;
 						break;
 				}
 				break;
 			}
 			case NOT_16REG:
-				switch (memory[++registers.IP]) {
+				switch (mem[++registers.ip]) {
 					case NOT_AX:
 						if (DEBUG) {
 							printf("not ax");
 						}
-						registers.AX.base = ~registers.AX.base;
+						registers.ax.base = ~registers.ax.base;
 						break;
 					case NOT_BX:
 						if (DEBUG) {
 							printf("not bx");
 						}
-						registers.BX.base = ~registers.BX.base;
+						registers.bx.base = ~registers.bx.base;
 						break;
 					case NOT_CX:
 						if (DEBUG) {
 							printf("not cx");
 						}
-						registers.CX.base = ~registers.CX.base;
+						registers.cx.base = ~registers.cx.base;
 						break;
 					case NOT_DX:
 						if (DEBUG) {
 							printf("not dx");
 						}
-						registers.DX.base = ~registers.DX.base;
+						registers.dx.base = ~registers.dx.base;
 						break;
 				}
 				break;
 			case XOR_8REG_REG: {
-				uint8_t modrm = memory[++registers.IP];
+				uint8_t modrm = mem[++registers.ip];
 				uint8_t reg1 = modrm & 0b111;
 				uint8_t reg2 = (modrm >> 3) & 0b111;
 
@@ -684,11 +642,11 @@ int main(int argc, char* argv[]) {
 					printf("xor %s, %s", reg8_names[reg1], reg8_names[reg2]);
 				}
 
-				*pregs8[reg1] ^= *pregs8[reg2];
+				*regs8[reg1] ^= *regs8[reg2];
 				break;
 			}
 			case XOR_16REG_REG: {
-				uint8_t modrm = memory[++registers.IP];
+				uint8_t modrm = mem[++registers.ip];
 				uint8_t reg1 = modrm & 0b111;
 				uint8_t reg2 = (modrm >> 3) & 0b111;
 
@@ -696,7 +654,7 @@ int main(int argc, char* argv[]) {
 					printf("xor %s, %s", reg16_names[reg1], reg16_names[reg2]);
 				}
 
-				*pregs16[reg1] ^= *pregs16[reg2];
+				*regs16[reg1] ^= *regs16[reg2];
 				break;
 			}
 			case NOP:
@@ -719,14 +677,14 @@ int main(int argc, char* argv[]) {
 		}
 
 		if (REGISTERS_VIEW) {
-			printf("\tAX = %04X\tBX = %04X\tCX = %04X\tDX = %04X", registers.AX.base, registers.BX.base, registers.CX.base, registers.DX.base);
+			printf("\tAX = %04X\tBX = %04X\tCX = %04X\tDX = %04X", registers.ax.base, registers.bx.base, registers.cx.base, registers.dx.base);
 		}
 
 		if (DEBUG) {
 			printf("\n");
 		}
 
-		registers.IP++;
+		registers.ip++;
 	}
 
 	if (DEBUG) {
@@ -734,14 +692,14 @@ int main(int argc, char* argv[]) {
 	}
 
 	if (REGISTERS_DUMP) {
-		registers_dump("registers.dump");
+		registers_dump("registers.dump", &registers);
 	}
 
 	if (MEMORY_DUMP) {
-		memory_dump("memory.dump");
+		memory_dump("memory.dump", mem);
 	}
 
-	free(memory);
+	free(mem);
 
 	return 0;
 }

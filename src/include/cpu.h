@@ -11,21 +11,23 @@ typedef union {
 } Register;
 
 typedef struct {
-	Register AX;
-	Register BX;
-	Register CX;
-	Register DX;
-	uint16_t SP;
-	uint16_t BP;
-	uint16_t SI;
-	uint16_t DI;
-	uint16_t CS;
-	uint16_t DS;
-	uint16_t SS;
-	uint16_t ES;
-	uint16_t IP;
-	uint16_t FLAGS;
+	Register ax;
+	Register bx;
+	Register cx;
+	Register dx;
+	uint16_t sp;
+	uint16_t bp;
+	uint16_t si;
+	uint16_t di;
+	uint16_t cs;
+	uint16_t ds;
+	uint16_t ss;
+	uint16_t es;
+	uint16_t ip;
+	uint16_t flags;
 } Registers;
+
+#define MEMORY_SIZE 1048576
 
 #define AL_REG 0xB0
 #define CL_REG 0xB1
@@ -41,7 +43,6 @@ typedef struct {
 #define BX_REG 0xBB
 #define MOV_8REG_REG 0x88
 #define MOV_16REG_REG 0x89
-#define MOV_REG_VALUE 0b1011
 #define MOV_AX_AX 0xC0
 #define MOV_AX_BX 0xD8
 #define MOV_AX_CX 0xC8
@@ -60,8 +61,6 @@ typedef struct {
 #define MOV_DX_DX 0xD2
 #define ADD_8REG_REG 0x00
 #define ADD_16REG_REG 0x01
-#define ADD_8REG_VALUE 0x80
-#define ADD_16REG_VALUE 0x83
 #define ADD_AL_VALUE 0x04
 #define ADD_AX_VALUE 0x05
 #define ADD_CL 0xC1
