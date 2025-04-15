@@ -29,6 +29,62 @@ typedef struct {
 
 #define MEMORY_SIZE 1048576
 
+/*
+R/M - Register/Memory
+IMM - Immediate
+
+RM8 - R/M byte
+RM16 - R/M word
+IMM8 - IMM byte
+IMM16 - IMM word
+*/
+
+#define ADD_RM8_REG 0x00
+#define ADD_RM16_REG 0x01
+#define ADD_AL_IMM8 0x04
+#define ADD_AX_IMM16 0x05
+
+#define AND_RM8_REG 0x20
+#define AND_RM16_REG 0x21
+#define AND_AL_IMM8 0x24
+#define AND_AX_IMM16 0x25
+
+#define XOR_RM8_REG 0x30
+#define XOR_RM16_REG 0x31
+#define XOR_AL_IMM8 0x34
+#define XOR_AX_IMM16 0x35
+
+#define OR_RM8_REG 0x08
+#define OR_RM16_REG 0x09
+#define OR_AL_IMM8 0x0C
+#define OR_AX_IMM16 0x0D
+
+#define SUB_RM8_REG 0x28
+#define SUB_RM16_REG 0x29
+#define SUB_AL_IMM8 0x2C
+#define SUB_AX_IMM16 0x2D
+
+#define INC_AX 0x40
+#define INC_CX 0x41
+#define INC_DX 0x42
+#define INC_BX 0x43
+
+#define DEC_AX 0x48
+#define DEC_CX 0x49
+#define DEC_DX 0x4A
+#define DEC_BX 0x4B
+
+#define MOV_AL_IMM8 0xB0
+#define MOV_CL_IMM8 0xB1
+#define MOV_DL_IMM8 0xB2
+#define MOV_BL_IMM8 0xB3
+#define MOV_AH_IMM8 0xB4
+#define MOV_CH_IMM8 0xB5
+#define MOV_DH_IMM8 0xB6
+#define MOV_DH_IMM8 0xB7
+#define MOV_RM8_REG 0x88
+#define MOV_RM16_REG 0x89
+
 #define AL_REG 0xB0
 #define CL_REG 0xB1
 #define DL_REG 0xB2
