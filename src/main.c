@@ -5,6 +5,8 @@
 #include <memory.h>
 #include <string.h>
 #include <cpu.h>
+#include <isa.h>
+#include <ops.h>
 #include <utils.h>
 
 #define VERSION			"0.1.5"
@@ -44,14 +46,32 @@ uint16_t *regs16[4] = {
 	&registers.ax.base, &registers.cx.base, &registers.dx.base, &registers.bx.base
 };
 
-char *reg8_names[8] = {
-	"al", "cl", "dl", "bl",
-	"ah", "ch", "dh", "bh"
-};
+void decode_modrm(uint8_t modrm, uint8_t* reg1, uint8_t* reg2) {
+	*reg1 = modrm & 0b111;
+	*reg2 = (modrm >> 3) & 0b111;
+}
 
-char *reg16_names[4] = {
-	"ax", "cx", "dx", "bx"
-};
+void op_rm8(uint8_t modrm, const char* op_name, void (*op)(uint8_t*, uint8_t*)) {
+	uint8_t reg1, reg2;
+	decode_modrm(modrm, &reg1, &reg2);
+
+	if (DEBUG) {
+		printf("%s %s, %s", op_name, reg8_names[reg1], reg8_names[reg2]);
+	}
+
+	op(regs8[reg1], regs8[reg2]);
+}
+
+void op_rm16(uint8_t modrm, const char* op_name, void (*op)(uint16_t*, uint16_t*)) {
+	uint8_t reg1, reg2;
+	decode_modrm(modrm, &reg1, &reg2);
+
+	if (DEBUG) {
+		printf("%s %s, %s", op_name, reg16_names[reg1], reg16_names[reg2]);
+	}
+
+	op(regs16[reg1], regs16[reg2]);
+}
 
 void mov_imm8(uint8_t opcode) {
 	uint8_t index = opcode - 0xB0;	// 0xB0 - AL
@@ -152,39 +172,11 @@ int main(int argc, char* argv[]) {
 
 		switch (mem[registers.ip]) {
 			case MOV_8REG_REG: {
-				if (DEBUG) {
-					printf("%02X ", mem[registers.ip]);
-				}
-
-				registers.ip++;
-
-				uint8_t modrm = mem[registers.ip];
-				uint8_t reg1 = modrm & 0b111;
-				uint8_t reg2 = (modrm >> 3) & 0b111;
-
-				if (DEBUG) {
-					printf("mov %s, %s", reg8_names[reg1], reg8_names[reg2]);
-				}
-
-				*regs8[reg1] = *regs8[reg2];
+				op_rm8(mem[++registers.ip], "mov", mov8);
 				break;
 			}
 			case MOV_16REG_REG: {
-				if (DEBUG) {
-					printf("%02X ", mem[registers.ip]);
-				}
-
-				registers.ip++;
-
-				uint8_t modrm = mem[registers.ip];
-				uint8_t reg1 = modrm & 0b111;
-				uint8_t reg2 = (modrm >> 3) & 0b111;
-
-				if (DEBUG) {
-					printf("mov %s, %s", reg16_names[reg1], reg16_names[reg2]);
-				}
-
-				*regs16[reg1] = *regs16[reg2];
+				op_rm16(mem[++registers.ip], "mov", mov16);
 				break;
 			}
 			case AL_REG:
@@ -204,51 +196,19 @@ int main(int argc, char* argv[]) {
 				mov_imm16(mem[registers.ip]);
 				break;
 			case ADD_8REG_REG: {
-				uint8_t modrm = mem[++registers.ip];
-				uint8_t reg1 = modrm & 0b111;
-				uint8_t reg2 = (modrm >> 3) & 0b111;
-
-				if (DEBUG) {
-					printf("add %s, %s", reg8_names[reg1], reg8_names[reg2]);
-				}
-
-				*regs8[reg1] += *regs8[reg2];
+				op_rm8(mem[++registers.ip], "add", add8);
 				break;
 			}
 			case ADD_16REG_REG: {
-				uint8_t modrm = mem[++registers.ip];
-				uint8_t reg1 = modrm & 0b111;
-				uint8_t reg2 = (modrm >> 3) & 0b111;
-
-				if (DEBUG) {
-					printf("add %s, %s", reg16_names[reg1], reg16_names[reg2]);
-				}
-
-				*regs16[reg1] += *regs16[reg2];
+				op_rm16(mem[++registers.ip], "add", add16);
 				break;
 			}
 			case SUB_8REG_REG: {
-				uint8_t modrm = mem[++registers.ip];
-				uint8_t reg1 = modrm & 0b111;
-				uint8_t reg2 = (modrm >> 3) & 0b111;
-
-				if (DEBUG) {
-					printf("sub %s, %s", reg8_names[reg1], reg8_names[reg2]);
-				}
-
-				*regs8[reg1] -= *regs8[reg2];
+				op_rm8(mem[++registers.ip], "sub", sub8);
 				break;
 			}
 			case SUB_16REG_REG: {
-				uint8_t modrm = mem[++registers.ip];
-				uint8_t reg1 = modrm & 0b111;
-				uint8_t reg2 = (modrm >> 3) & 0b111;
-
-				if (DEBUG) {
-					printf("sub %s, %s", reg16_names[reg1], reg16_names[reg2]);
-				}
-
-				*regs16[reg1] -= *regs16[reg2];
+				op_rm16(mem[++registers.ip], "sub", sub16);
 				break;
 			}
 			case ADD_AL_VALUE:
@@ -435,27 +395,11 @@ int main(int argc, char* argv[]) {
 				break;
 			}
 			case AND_8REG_REG: {
-				uint8_t modrm = mem[++registers.ip];
-				uint8_t reg1 = modrm & 0b111;
-				uint8_t reg2 = (modrm >> 3) & 0b111;
-
-				if (DEBUG) {
-					printf("and %s, %s", reg8_names[reg1], reg8_names[reg2]);
-				}
-
-				*regs8[reg1] &= *regs8[reg2];
+				op_rm8(mem[++registers.ip], "and", and8);
 				break;
 			}
 			case AND_16REG_REG: {
-				uint8_t modrm = mem[++registers.ip];
-				uint8_t reg1 = modrm & 0b111;
-				uint8_t reg2 = (modrm >> 3) & 0b111;
-
-				if (DEBUG) {
-					printf("and %s, %s", reg16_names[reg1], reg16_names[reg2]);
-				}
-
-				*regs16[reg1] &= *regs16[reg2];
+				op_rm16(mem[++registers.ip], "and", add16);
 				break;
 			}
 			case AND_AL_VALUE:
@@ -509,27 +453,11 @@ int main(int argc, char* argv[]) {
 				break;
 			}
 			case OR_8REG_REG: {
-				uint8_t modrm = mem[++registers.ip];
-				uint8_t reg1 = modrm & 0b111;
-				uint8_t reg2 = (modrm >> 3) & 0b111;
-
-				if (DEBUG) {
-					printf("or %s, %s", reg8_names[reg1], reg8_names[reg2]);
-				}
-
-				*regs8[reg1] |= *regs8[reg2];
+				op_rm8(mem[++registers.ip], "or", or8);
 				break;
 			}
 			case OR_16REG_REG: {
-				uint8_t modrm = mem[++registers.ip];
-				uint8_t reg1 = modrm & 0b111;
-				uint8_t reg2 = (modrm >> 3) & 0b111;
-
-				if (DEBUG) {
-					printf("or %s, %s", reg16_names[reg1], reg16_names[reg2]);
-				}
-
-				*regs16[reg1] |= *regs16[reg2];
+				op_rm16(mem[++registers.ip], "or", or16);
 				break;
 			}
 			case OR_AL_VALUE: {
@@ -634,27 +562,11 @@ int main(int argc, char* argv[]) {
 				}
 				break;
 			case XOR_8REG_REG: {
-				uint8_t modrm = mem[++registers.ip];
-				uint8_t reg1 = modrm & 0b111;
-				uint8_t reg2 = (modrm >> 3) & 0b111;
-
-				if (DEBUG) {
-					printf("xor %s, %s", reg8_names[reg1], reg8_names[reg2]);
-				}
-
-				*regs8[reg1] ^= *regs8[reg2];
+				op_rm8(mem[++registers.ip], "xor", xor8);
 				break;
 			}
 			case XOR_16REG_REG: {
-				uint8_t modrm = mem[++registers.ip];
-				uint8_t reg1 = modrm & 0b111;
-				uint8_t reg2 = (modrm >> 3) & 0b111;
-
-				if (DEBUG) {
-					printf("xor %s, %s", reg16_names[reg1], reg16_names[reg2]);
-				}
-
-				*regs16[reg1] ^= *regs16[reg2];
+				op_rm16(mem[++registers.ip], "xor", xor16);
 				break;
 			}
 			case NOP:
