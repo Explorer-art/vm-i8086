@@ -105,6 +105,22 @@ void mov_imm16(uint8_t opcode) {
 	*regs16[index] = mem[registers.ip] | (mem[++registers.ip] << 8);
 }
 
+void not8(uint8_t reg_index) {
+	if (DEBUG) {
+		printf("not %s", reg8_names[reg_index]);
+	}
+
+	*regs8[reg_index] = ~*regs8[reg_index];
+}
+
+void not16(uint8_t reg_index) {
+	if (DEBUG) {
+		printf("not %s", reg16_names[reg_index]);
+	}
+
+	*regs16[reg_index] = ~*regs16[reg_index];
+}
+
 int main(int argc, char* argv[]) {
 	if (argc < 2) {
 		printf("Usage: %s <file> [options]\n\n", argv[0]);
@@ -481,85 +497,11 @@ int main(int argc, char* argv[]) {
 				break;
 			}
 			case NOT_8REG: {
-				switch (mem[++registers.ip]) {
-					case NOT_AL:
-						if (DEBUG) {
-							printf("not al");
-						}
-						registers.ax.low = ~registers.ax.low;
-						break;
-					case NOT_BL:
-						if (DEBUG) {
-							printf("not bl");
-						}
-						registers.bx.low = ~registers.bx.low;
-						break;
-					case NOT_CL:
-						if (DEBUG) {
-							printf("not cl");
-						}
-						registers.cx.low = ~registers.cx.low;
-						break;
-					case NOT_DL:
-						if (DEBUG) {
-							printf("not dl");
-						}
-						registers.dx.low = ~registers.dx.low;
-						break;
-					case NOT_AH:
-						if (DEBUG) {
-							printf("not ah");
-						}
-						registers.ax.high = ~registers.ax.high;
-						break;
-					case NOT_BH:
-						if (DEBUG) {
-							printf("not bh");
-						}
-						registers.bx.high = ~registers.bx.high;
-						break;
-					case NOT_CH:
-						if (DEBUG) {
-							printf("not ch");
-						}
-						registers.cx.high = ~registers.cx.high;
-						break;
-					case NOT_DH:
-						if (DEBUG) {
-							printf("not dh");
-						}
-						registers.dx.high = ~registers.dx.high;
-						break;
-				}
+				not8(mem[++registers.ip] - 0xD0);
 				break;
 			}
 			case NOT_16REG:
-				switch (mem[++registers.ip]) {
-					case NOT_AX:
-						if (DEBUG) {
-							printf("not ax");
-						}
-						registers.ax.base = ~registers.ax.base;
-						break;
-					case NOT_BX:
-						if (DEBUG) {
-							printf("not bx");
-						}
-						registers.bx.base = ~registers.bx.base;
-						break;
-					case NOT_CX:
-						if (DEBUG) {
-							printf("not cx");
-						}
-						registers.cx.base = ~registers.cx.base;
-						break;
-					case NOT_DX:
-						if (DEBUG) {
-							printf("not dx");
-						}
-						registers.dx.base = ~registers.dx.base;
-						break;
-				}
+				not16(mem[++registers.ip] - 0xD0);
 				break;
 			case XOR_8REG_REG: {
 				op_rm8(mem[++registers.ip], "xor", xor8);
