@@ -1,4 +1,4 @@
-#include <ops.h>
+#include <isa.h>
 
 void mov8(uint8_t* dst, uint8_t* src) { *dst = *src; }
 void mov16(uint16_t* dst, uint16_t* src) { *dst = *src; }

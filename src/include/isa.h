@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdint.h>
+
 /*
 R/M - Register/Memory
 IMM - Immediate
@@ -158,11 +160,15 @@ IMM16 - IMM word
 #define NOP 0x90
 #define HLT_INS 0xF4
 
-char *reg8_names[8] = {
-	"al", "cl", "dl", "bl",
-	"ah", "ch", "dh", "bh"
-};
-
-char *reg16_names[4] = {
-	"ax", "cx", "dx", "bx"
-};
+void mov8(uint8_t* dst, uint8_t* src);
+void mov16(uint16_t* dst, uint16_t* src);
+void add8(uint8_t* dst, uint8_t* src);
+void add16(uint16_t* dst, uint16_t* src);
+void sub8(uint8_t* dst, uint8_t* src);
+void sub16(uint16_t* dst, uint16_t* src);
+void and8(uint8_t* dst, uint8_t* src);
+void and16(uint16_t* dst, uint16_t* src);
+void or8(uint8_t* dst, uint8_t* src);
+void or16(uint16_t* dst, uint16_t* src);
+void xor8(uint8_t* dst, uint8_t* src);
+void xor16(uint16_t* dst, uint16_t* src);

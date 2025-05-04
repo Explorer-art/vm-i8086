@@ -6,7 +6,6 @@
 #include <string.h>
 #include <cpu.h>
 #include <isa.h>
-#include <ops.h>
 #include <utils.h>
 
 #define VERSION			"0.1.5"

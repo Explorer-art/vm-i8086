@@ -2,6 +2,8 @@
 
 #include <stdint.h>
 
+#define MEMORY_SIZE 1048576
+
 typedef union {
 	uint16_t base;
 	struct {
@@ -27,4 +29,5 @@ typedef struct {
 	uint16_t flags;
 } Registers;
 
-#define MEMORY_SIZE 1048576
+extern const char* reg8_names[];
+extern const char* reg16_names[];
